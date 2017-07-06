@@ -1,0 +1,856 @@
+* steps
+
+** 00
+
+| 10 | working directory     |
+|    |                       |
+| 20 | download stage3       |
+|    |                       |
+| 22 | download portage      |
+|    |                       |
+| 24 | extraction            |
+|    |                       |
+| 30 | modify make.conf      |
+|    |                       |
+| 32 | chroot                |
+|    |                       |
+| 34 | profile, zone, locale |
+|    |                       |
+| 36 | emerge proxychains    |
+|    |                       |
+| 38 | passwd, user, grub,   |
+|    |                       |
+| 40 | kernel emerge         |
+|    |                       |
+|    | kernel configuration  |
+| 42 | tiny kernel           |
+|    |                       |
+| 44 | disk, netcard         |
+|    |                       |
+| 90 | sh block template     |
+|    |                       |
+| 92 | tar                   |
+|    |                       |
+| 94 | transplantation       |
+|    |                       |
+| 96 | usb partitioning      |
+|    |                       |
+
+# download directory
+dy="/tmp/dy"  
+
+# working direcxtory
+wy="/tmp/wy"
+
+
+** 94
+
+# transplantation directory
+td="/tmp/gentoo"
+
+mkdir $td
+
+mount /dev/sdd4 $td
+
+mkdir $td/boot
+
+mount /dev/sdd2 $td/boot
+
+
+
+ls -lha /tmp/wy/tmp/*
+
+-rw-r--r-- 1 root root 548M Jul  6 16:50 /tmp/wy/tmp/stage4_20170706_fs_netcard.tar.xz
+-rw-r--r-- 1 root root 519M Jul  6 15:53 /tmp/wy/tmp/stage4_20170706_tiny.tar.xz
+
+
+# the file for transplantation
+
+ft="/tmp/wy/tmp/stage4_20170706_fs_netcard.tar.xz"
+
+
+time nice -10 \
+tar xvJpf \
+$ft \
+-C $td \
+--xattrs
+
+real    7m18.268s
+user    0m35.169s
+sys     0m11.729s
+
+
+
+
+blkid | grep sdd
+
+blkid | grep sdd
+/dev/sdd2: UUID="e5fa3175-0f37-4865-a24e-05898e3ac595" TYPE="ext2" PARTLABEL="boot" PARTUUID="f909b23f-466b-441d-8633-42a027aa39cc"
+/dev/sdd3: UUID="9ad52a79-b117-46af-a896-13ef5a771b3b" TYPE="ext4" PARTLABEL="fs1" PARTUUID="59f4637d-0cd8-414f-bc27-1873761a5b87"
+/dev/sdd4: UUID="23bd3386-a0b1-4f61-869e-6f7a06aff470" TYPE="ext4" PARTLABEL="fs2" PARTUUID="65e94ef4-c82d-41f9-8f15-1f3880fa62b7"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="73fe4de1-47ff-4e48-95fe-dd2e01936272"
+
+/etc/fstabUsing a UUID for the root partition
+
+
+cat <<EOF > $td/etc/fstab
+UUID=23bd3386-a0b1-4f61-869e-6f7a06aff470  /            ext4    noatime              0 1
+UUID=e5fa3175-0f37-4865-a24e-05898e3ac595  /boot        ext2    defaults,noatime     0 2
+
+tmpfs   /var/tmp/portage        tmpfs   uid=portage,gid=portage,mode=775,noatime    0 0
+tmpfs   /tmp         tmpfs   mode=775,noatime          0  0
+
+EOF
+
+cat $td/etc/fstab
+
+https://wiki.gentoo.org/wiki/Fstab
+
+
+
+thedir=$td
+
+mount -t proc proc  ${thedir}/proc
+mount --rbind /sys  ${thedir}/sys
+mount --make-rslave ${thedir}/sys
+mount --rbind /dev  ${thedir}/dev
+mount --make-rslave ${thedir}/dev
+
+chroot ${thedir} /bin/bash
+source /etc/profile
+export PS1="(chroot) $PS1"
+
+
+grub-install /dev/sdd
+
+
+
+mount -o size=90%,noatime,nodiratime -t tmpfs tmpfs /tmp
+
+mkdir /var/tmp/portage
+
+mount -o size=90%,noatime,nodiratime,uid=portage,gid=portage,mode=775 -t tmpfs tmpfs /var/tmp/portage 
+
+
+exit
+cd
+
+umount -l ${thedir}/dev{/shm,/pts,}
+umount -l ${thedir}{/sys,/proc}
+
+
+qemu-system-x86_64 -m 1G -drive file=/dev/sdd
+
+
+** 96
+
+white y usb 8 G
+
+| partition | mib      |   G | name | mount point |
+|-----------+----------+-----+------+-------------|
+|         1 | 1 3      |     | grub |             |
+|           |          |     |      |             |
+|         2 | 3 131    | 0.1 | boot | /mnt/sdd2   |
+|           |          |     |      |             |
+|         3 | 131 3000 | 2.8 | fs1  | /mnt/sdd3   |
+|           |          |     |      |             |
+|         4 | 3000 -1  | 4.5 | fs2  | /mnt/sdd4   |
+|           |          |     |      |             |
+
+
+parted -a optimal /dev/sdd
+
+
+(parted)
+
+mklabel gpt
+
+unit mib
+
+mkpart primary 1 3
+
+name 1 grub
+
+set 1 bios_grub on
+
+print
+
+mkpart primary 3 131
+
+name 2 boot
+
+mkpart primary 131 3000
+
+name 3 fs1
+
+mkpart primary 3000 -1 
+
+name 4 fs2
+
+quit
+
+
+mkfs.ext2 -T small /dev/sdd2
+
+mkfs.ext4 -j -T small /dev/sdd3
+
+mkfs.ext4 -j -T small /dev/sdd4
+
+
+
+
+
+
+
+
+
+** 42
+
+cd /usr/src/linux
+
+cp .config .config-tiny-20170706
+
+make menuconfig
+
+
+Bus options 
+ [*] PCI support  
+
+[*] Enable the block layer  ---> 
+
+Device Drivers > SCSI device support 
+ [*] SCSI device support 
+
+ [*] Serial ATA and Parallel ATA drivers (libata) 
+
+Device Drivers > USB support
+ [*]   Support for Host-side USB  
+
+ [*]     xHCI HCD (USB 3.0) support 
+ [*]     EHCI HCD (USB 2.0) support 
+ [*]     OHCI HCD (USB 1.1) support  
+ [*]     USB Mass Storage support
+
+
+Processor type and features 
+[*] Symmetric multi-processing support
+(4) Maximum number of CPUs 
+[ ] SMT (Hyperthreading) scheduler support (NEW) 
+[*] Multi-core scheduler support (NEW)
+
+File systems 
+<*> Second extended fs support
+
+ <*> The Extended 3 (ext3) filesystem
+ <M> Btrfs filesystem support       
+ DOS/FAT/NT Filesystems
+ <M> MSDOS fs support 
+ <M> NTFS file system support  
+
+[*] Networking support  ---> 
+ Networking options
+ [*] TCP/IP networking
+
+Device Drivers
+ [*] Network device support  ---> 
+Ethernet driver support
+[*]   Realtek devices
+<M>     Realtek 8169 gigabit ethernet support # M4A87TD/USB
+
+[*]   Atheros devices  
+<M>     Atheros L1C Gigabit Ethernet support  # h77md3h 
+
+Device Drivers > Network device support > Wireless LAN 
+[*]   Intersil devices (NEW)  
+<M>     Intersil Prism GT/Duette/Indigo PCI/Cardbus (DEPRECATED)  
+ 
+Networking support > Wireless
+<*>   cfg80211 - wireless configuration API 
+<M>   Generic IEEE 802.11 Networking Stack (mac80211) 
+
+
+time nice -10 \
+make && make modules_install
+
+
+
+
+qemu-system-x86_64 \
+    -kernel /tmp/wy/usr/src/linux/arch/x86_64/boot/bzImage \
+    -nographic -append "console=ttyS0" -enable-kvm
+
+
+    -kernel obj/linux-x86-allnoconfig/arch/x86_64/boot/bzImage \
+    -initrd obj/initramfs-busybox-x86.cpio.gz \
+
+Exit the VM by hitting Ctl-a c then typing “quit” at the qemu monitor shell.
+
+
+KERNELVER=4.8.17-fs-netcard
+EXTENSION=20170706
+
+cp .config /boot/config-${KERNELVER}-${EXTENSION}
+cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
+cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
+cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
+
+/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
+
+
+
+http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2015-edition.html
+
+https://wiki.gentoo.org/wiki/Kernel/Gentoo_Kernel_Configuration_Guide#Kernel_features
+
+
+
+
+** 42
+
+
+cd /usr/src/linux
+
+make allnoconfig
+
+
+make menuconfig
+
+[*] 64-bit kernel
+
+-> General setup
+  -> Configure standard kernel features
+[*] Enable support for printk
+
+-> General setup
+[*] Initial RAM filesystem and RAM disk (initramfs/initrd) support
+
+-> Executable file formats / Emulations
+[*] Kernel support for ELF binaries
+[*] Kernel support for scripts starting with #!
+
+-> Device Drivers
+  -> Character devices
+[*] Enable TTY
+
+-> Device Drivers
+  -> Character devices
+    -> Serial drivers
+[*] 8250/16550 and compatible serial support
+[*]   Console on 8250/16550 and compatible serial port
+
+-> File systems
+  -> Pseudo filesystems
+[*] /proc file system support
+[*] sysfs file system support
+
+
+
+time nice -10 \
+make -j6
+
+arch/x86/boot/bzImage
+Setup is 15836 bytes (padded to 15872 bytes).
+System is 946 kB
+CRC c397f612
+Kernel: arch/x86/boot/bzImage is ready  (#1)
+
+real    3m1.486s
+user    2m42.803s
+sys     0m14.217s
+
+
+
+qemu-system-x86_64 \
+    -kernel /tmp/wy/usr/src/linux/arch/x86_64/boot/bzImage \
+    -nographic -append "console=ttyS0" -enable-kvm
+
+
+    -kernel obj/linux-x86-allnoconfig/arch/x86_64/boot/bzImage \
+    -initrd obj/initramfs-busybox-x86.cpio.gz \
+
+Exit the VM by hitting Ctl-a c then typing “quit” at the qemu monitor shell.
+
+
+KERNELVER=4.8.17-tiny
+EXTENSION=20170706
+
+cp .config /boot/config-${KERNELVER}-${EXTENSION}
+cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
+cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
+cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
+
+/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
+
+
+
+http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2015-edition.html
+
+
+
+** 42
+
+
+cd /usr/src/linux
+
+make allnoconfig
+
+
+make menuconfig
+
+[*] 64-bit kernel
+
+-> General setup
+  -> Configure standard kernel features
+[*] Enable support for printk
+
+-> General setup
+[*] Initial RAM filesystem and RAM disk (initramfs/initrd) support
+
+-> Executable file formats / Emulations
+[*] Kernel support for ELF binaries
+[*] Kernel support for scripts starting with #!
+
+-> Device Drivers
+  -> Character devices
+[*] Enable TTY
+
+-> Device Drivers
+  -> Character devices
+    -> Serial drivers
+[*] 8250/16550 and compatible serial support
+[*]   Console on 8250/16550 and compatible serial port
+
+-> File systems
+  -> Pseudo filesystems
+[*] /proc file system support
+[*] sysfs file system support
+
+
+
+time nice -10 \
+make -j6
+
+arch/x86/boot/bzImage
+Setup is 15836 bytes (padded to 15872 bytes).
+System is 946 kB
+CRC c397f612
+Kernel: arch/x86/boot/bzImage is ready  (#1)
+
+real    3m1.486s
+user    2m42.803s
+sys     0m14.217s
+
+
+
+qemu-system-x86_64 \
+    -kernel /tmp/wy/usr/src/linux/arch/x86_64/boot/bzImage \
+    -nographic -append "console=ttyS0" -enable-kvm
+
+
+    -kernel obj/linux-x86-allnoconfig/arch/x86_64/boot/bzImage \
+    -initrd obj/initramfs-busybox-x86.cpio.gz \
+
+Exit the VM by hitting Ctl-a c then typing “quit” at the qemu monitor shell.
+
+
+KERNELVER=4.8.17-tiny
+EXTENSION=20170706
+
+cp .config /boot/config-${KERNELVER}-${EXTENSION}
+cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
+cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
+cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
+
+/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
+
+
+
+http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2015-edition.html
+
+
+** 38
+
+
+passwd
+
+
+useradd -m -G users,wheel,audio,usb,video user1
+
+passwd user1
+
+emerge grub
+
+
+
+** 36
+
+emerge proxychains
+
+proxychains -f /root/proxychains.conf bash
+
+
+
+** 40
+
+echo "sys-kernel/hardened-sources symlink" >> /etc/portage/package.use/hardened-sources
+
+cat /etc/portage/package.use/hardened-sources
+
+emerge sys-kernel/hardened-sources 
+
+tail -f /tmp/wy/var/log/emerge-fetch.log
+
+
+
+** 34
+
+eselect profile list
+
+[12]  hardened/linux/amd64 *
+
+
+eselect profile set 12
+
+eselect profile list
+
+
+ls /usr/share/zoneinfo
+
+echo "Asia/Taipei" > /etc/timezone
+
+emerge --config sys-libs/timezone-data
+
+
+sed '' /etc/locale.gen
+
+sed -i 's/#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
+
+sed '' /etc/locale.gen
+
+
+locale-gen
+
+eselect locale list
+
+eselect locale set 3
+
+eselect locale list
+
+env-update && source /etc/profile
+
+
+** 32 
+
+thedir=$wy
+
+mount -t proc proc  ${thedir}/proc
+mount --rbind /sys  ${thedir}/sys
+mount --make-rslave ${thedir}/sys
+mount --rbind /dev  ${thedir}/dev
+mount --make-rslave ${thedir}/dev
+
+chroot ${thedir} /bin/bash
+source /etc/profile
+export PS1="(chroot) $PS1"
+
+
+mount -o size=90%,noatime,nodiratime -t tmpfs tmpfs /tmp
+
+mkdir /var/tmp/portage
+
+mount -o size=90%,noatime,nodiratime,uid=portage,gid=portage,mode=775 -t tmpfs tmpfs /var/tmp/portage 
+
+
+exit
+cd
+
+umount -l ${thedir}/dev{/shm,/pts,}
+umount -l ${thedir}{/sys,/proc}
+
+
+
+emerge --sync
+
+
+** 30 
+
+# path of make.conf
+pm="$wy/etc/portage/make.conf"
+
+cat $pm
+
+cat <<EOF >> $pm
+
+MAKEOPTS="-j5"
+PORTAGE_NICENESS=10
+
+GENTOO_MIRRORS="http://ftp.twaren.net/Linux/Gentoo/ http://ftp.jaist.ac.jp/pub/Linux/Gentoo/ http://ftp.iij.ad.jp/pub/linux/gentoo/"
+
+INPUT_DEVICES="evdev"
+
+VIDEO_CARDS="nouveau intel i915"
+# VIDEO_CARDS="nouveau"
+
+PAX_MARKINGS="XT" 
+
+EOF
+
+
+sed -i 's/USE=\"/USE=\"xattr /' $pm
+
+sed  '' $pm
+
+
+
+
+mkdir /tmp/wy/etc/portage/repos.conf
+
+cp /tmp/wy/usr/share/portage/config/repos.conf /tmp/wy/etc/portage/repos.conf/gentoo.conf
+
+
+sed -i 's/rsync.gentoo/rsync.tw.gentoo/' /tmp/wy/etc/portage/repos.conf/gentoo.conf
+
+sed  '' /tmp/wy/etc/portage/repos.conf/gentoo.conf
+
+
+cp -L /etc/resolv.conf /tmp/wy/etc/
+
+cp proxychains.conf /tmp/wy/root
+
+
+** 24
+
+#
+
+rm -rf $wy
+
+mkdir $wy
+
+
+ls -lha /tmp/dy/*
+
+
+s3="/tmp/dy/stage3-amd64-hardened-20170629.tar.bz2"
+
+
+time nice -10 \
+tar xvpf \
+$s3 \
+-C /tmp/wy \
+--xattrs
+
+real    0m31.289s
+user    0m30.742s
+sys     0m2.352s
+
+
+du -hd1 $wy | sort -rh
+
+915M    /tmp/wy
+843M    /tmp/wy/usr
+29M     /tmp/wy/var
+17M     /tmp/wy/lib64
+9.6M    /tmp/wy/etc
+9.0M    /tmp/wy/bin
+6.2M    /tmp/wy/sbin
+3.1M    /tmp/wy/lib32
+
+
+po="/tmp/dy/portage-latest.tar.xz"
+
+time nice -10 \
+tar xvpf \
+$po \
+-C $wy/usr \
+--xattrs
+
+real    0m7.504s
+user    0m6.983s
+sys     0m3.014s
+
+du -hd1 $wy | sort -rh
+
+1.8G    /tmp/wy
+1.7G    /tmp/wy/usr
+29M     /tmp/wy/var
+17M     /tmp/wy/lib64
+9.6M    /tmp/wy/etc
+9.0M    /tmp/wy/bin
+6.2M    /tmp/wy/sbin
+3.1M    /tmp/wy/lib32
+
+
+** 22
+
+p1="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots/portage-latest.tar.xz"
+
+cd /tmp/dy
+
+
+
+wget $p1
+
+
+proxychains -f /home/c5766/proxychains.conf wget $p1
+
+
+# ##########
+
+portage
+
+http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots/
+
+http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots/portage-latest.tar.xz
+
+
+
+
+** 20
+
+
+p1="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
+
+# curl $p1 | awk '{print $1}'
+
+p2=$(proxychains -f /home/c5766/proxychains.conf curl $p1)
+
+p2=$(curl $p1)
+
+
+
+
+p3=$( echo $p2 | sed -e 's:.*/::g' -e 's: .*::g') 
+
+p4="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds/current-stage3-amd64-hardened/"
+
+
+
+proxychains -f /home/c5766/proxychains.conf wget $p4$p3
+
+
+wget $p4$p3
+
+
+
+
+#+HEADERS: :results silent
+
+#+HEADERS: :results raw
+#+HEADERS: :dir /tmp/dy
+#+BEGIN_SRC sh
+
+
+p1="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
+
+# curl $p1 | awk '{print $1}'
+
+p2=$(curl $p1)
+
+p3=$( echo $p2 | sed -e 's:.*/::g' -e 's: .*::g') 
+
+p4="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds/current-stage3-amd64-hardened/"
+
+wget $p4$p3
+
+#+END_SRC
+
+
+
+
+stage3
+
+
+http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds/
+
+
+http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt
+
+# Latest as of Thu, 06 Jul 2017 00:30:01 +0000
+# ts=1499301001
+20170629/hardened/stage3-amd64-hardened-20170629.tar.bz2 236310266
+
+
+http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds/current-stage3-amd64-hardened/stage3-amd64-hardened-20170629.tar.bz2
+
+
+
+
+** 10
+
+#+HEADERS: :results silent
+
+#+HEADERS: :results raw
+#+HEADERS: :dir /tmp
+#+BEGIN_SRC sh
+
+
+# download directory
+dy="/tmp/dy"  
+
+# working direcxtory
+wy="/tmp/wy"
+
+mkdir $dy
+
+mkdir $wy
+
+#+END_SRC
+
+#+RESULTS:
+
+
+** 90 
+
+#+HEADERS:  :dir /su::/tmp
+#+HEADERS: :results raw
+
+#+HEADERS: :results silent
+#+HEADERS: :dir /tmp
+#+BEGIN_SRC sh
+
+date
+
+#+END_SRC
+
+#+RESULTS:
+Thu Jul  6 11:56:55 CST 2017
+
+
+
+#+HEADERS: :dir /tmp
+#+BEGIN_SRC sh
+
+date
+#pwd
+
+#+END_SRC
+
+#+RESULTS:
+: Thu Jul  6 11:57:45 CST 2017
+
+** 92
+
+
+inside the chroot
+
+cat <<EOF >  /tmp/stage4.excl
+.bash_history
+/mnt/*
+/tmp/*
+/proc/*
+/sys/*
+/dev/*
+EOF
+
+cat /tmp/stage4.excl
+
+time nice -10 \
+tar -X /tmp/stage4.excl -c / | xz -1vT0  > /tmp/stage4_20170706_fs_netcard.tar.xz
+
+ 100 %      547.0 MiB / 2277.8 MiB = 0.240    28 MiB/s       1:21        
+
+
+time nice -10 \
+tar -X /tmp/stage4.excl -c / | xz -1vT0  > /tmp/stage4_20170706_tiny.tar.xz
+
+ 100 %      518.5 MiB / 2172.1 MiB = 0.239    28 MiB/s       1:17   

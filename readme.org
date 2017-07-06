@@ -27,6 +27,8 @@
 |    |                       |
 | 44 | disk, netcard         |
 |    |                       |
+| 46 | udev                  |
+|    |                       |
 | 90 | sh block template     |
 |    |                       |
 | 92 | tar                   |
@@ -41,6 +43,85 @@ dy="/tmp/dy"
 
 # working direcxtory
 wy="/tmp/wy"
+
+** 46
+
+cd /usr/src/linux
+
+cp .config .config-tiny-fs-netcard-20170706
+
+make menuconfig
+
+https://wiki.gentoo.org/wiki/Udev
+
+General setup  --->
+    [*] Configure standard kernel features (expert users)  --->
+        [ ] Enable deprecated sysfs features to support old userspace tools
+        [*] Enable signalfd() system call
+Enable the block layer  --->
+    [*] Block layer SG support v4
+Networking support  --->
+    Networking options  --->
+        <*> Unix domain sockets
+Device Drivers  --->
+    Generic Driver Options  --->
+        ()  path to uevent helper
+        [*] Maintain a devtmpfs filesystem to mount at /dev
+    < > ATA/ATAPI/MFM/RLL support (DEPRECATED)  --->
+File systems  --->
+    [*] Inotify support for userspace
+    Pseudo filesystems --->
+        [*] /proc file system support
+        [*] sysfs file system support
+
+/etc/portage/make.conf
+USE="udev"
+
+emerge --ask --changed-use --deep @world
+
+rc-update add udev sysinit
+
+
+
+
+time nice -10 \
+make && make modules_install
+
+
+
+
+qemu-system-x86_64 \
+    -kernel /tmp/wy/usr/src/linux/arch/x86_64/boot/bzImage \
+    -nographic -append "console=ttyS0" -enable-kvm
+
+
+    -kernel obj/linux-x86-allnoconfig/arch/x86_64/boot/bzImage \
+    -initrd obj/initramfs-busybox-x86.cpio.gz \
+
+Exit the VM by hitting Ctl-a c then typing “quit” at the qemu monitor shell.
+
+
+KERNELVER=4.8.17-fs-netcard
+
+KERNELVER=4.8.17-fs-netcard-udev
+EXTENSION=20170706
+
+cp .config /boot/config-${KERNELVER}-${EXTENSION}
+cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
+cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
+cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
+
+/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
+
+
+
+http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2015-edition.html
+
+https://wiki.gentoo.org/wiki/Kernel/Gentoo_Kernel_Configuration_Guide#Kernel_features
+
+
+
+
 
 
 ** 94
@@ -141,6 +222,8 @@ umount -l ${thedir}{/sys,/proc}
 
 qemu-system-x86_64 -m 1G -drive file=/dev/sdd
 
+qemu-system-x86_64 -m 1G -drive file=/dev/sdb
+
 
 ** 96
 
@@ -204,7 +287,7 @@ mkfs.ext4 -j -T small /dev/sdd4
 
 
 
-** 42
+** 44
 
 cd /usr/src/linux
 
@@ -541,7 +624,20 @@ env-update && source /etc/profile
 
 ** 32 
 
-thedir=$wy
+
+# transplantation directory
+td="/tmp/gentoo"
+
+mkdir $td
+
+mount /dev/sdb4 $td
+
+# mkdir $td/boot
+
+mount /dev/sdb2 $td/boot
+
+
+thedir=$td
 
 mount -t proc proc  ${thedir}/proc
 mount --rbind /sys  ${thedir}/sys
@@ -569,7 +665,7 @@ umount -l ${thedir}{/sys,/proc}
 
 
 
-emerge --sync
+
 
 
 ** 30 

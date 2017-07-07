@@ -29,6 +29,8 @@
 |    |                       |
 | 46 | udev                  |
 |    |                       |
+| 48 |                       |
+|    |                       |
 | 90 | sh block template     |
 |    |                       |
 | 92 | tar                   |
@@ -43,6 +45,74 @@ dy="/tmp/dy"
 
 # working direcxtory
 wy="/tmp/wy"
+
+** 48
+
+cd /usr/src/linux
+
+cp .config .config-tiny-fs-netcard-udev-20170706
+
+make menuconfig
+
+Enable the block layer > Partition Types 
+
+[*] Advanced partition selection   
+ [*]   EFI GUID Partition support (NEW)
+
+https://wiki.archlinux.org/index.php/partitioning#GPT_Kernel_Support
+
+CONFIG_DEVTMPFS="y" 
+CONFIG_DEVTMPFS_MOUNT="y" 
+
+CONFIG_SATA_AHCI="y" 
+CONFIG_SATA_AHCI_PLATEFORM="y"
+
+https://forums.gentoo.org/viewtopic-t-942728-start-0.html
+
+CONFIG_MULTIUSER=y t
+
+https://github.com/sabotage-linux/sabotage/issues/356
+
+
+
+time nice -10 \
+make && make modules_install
+
+
+
+
+qemu-system-x86_64 \
+    -kernel /tmp/gentoo/boot/kernel-4.8.17-fs-netcard-udev-gpt-20170706 \
+    -nographic -append "console=ttyS0" -enable-kvm \
+    -drive file=/dev/sdd
+
+/dev/sdd2 $td/boot/kernel-4.8.17-fs-netcard-udev-gpt-20170706
+
+
+    -kernel obj/linux-x86-allnoconfig/arch/x86_64/boot/bzImage \
+    -initrd obj/initramfs-busybox-x86.cpio.gz \
+
+Exit the VM by hitting Ctl-a c then typing “quit” at the qemu monitor shell.
+
+
+KERNELVER=4.8.17-fs-netcard
+
+KERNELVER=4.8.17-fs-netcard-udev
+
+KERNELVER=4.8.17-fs-netcard-udev-gpt
+EXTENSION=20170706
+
+cp .config /boot/config-${KERNELVER}-${EXTENSION}
+cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
+cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
+cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
+
+/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
+
+
+
+
+
 
 ** 46
 
@@ -386,6 +456,13 @@ http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2
 https://wiki.gentoo.org/wiki/Kernel/Gentoo_Kernel_Configuration_Guide#Kernel_features
 
 
+ lspci -k 
+
+01:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. RTL8111/8168/8411 PCI Express Gigabit Ethernet Controller (rev 06)
+        Subsystem: ASUSTeK Computer Inc. P8P67 and other motherboards
+        Kernel driver in use: r8169
+        Kernel modules: r8169
+0
 
 
 ** 42
@@ -630,11 +707,11 @@ td="/tmp/gentoo"
 
 mkdir $td
 
-mount /dev/sdb4 $td
+mount /dev/sdd4 $td
 
 # mkdir $td/boot
 
-mount /dev/sdb2 $td/boot
+mount /dev/sdd2 $td/boot
 
 
 thedir=$td

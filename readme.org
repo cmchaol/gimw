@@ -1,3 +1,51 @@
+* kernel
+
+** 
+
+|                        |   |   |
+|------------------------+---+---|
+| Smallest Kernel Config |   |   |
+|                        |   |   |
+| usb boot               |   |   |
+
+  
+
+** Smallest Kernel Config
+
+http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2015-edition.html
+
+[*] 64-bit kernel
+
+-> General setup
+  -> Configure standard kernel features
+[*] Enable support for printk
+
+-> General setup
+[*] Initial RAM filesystem and RAM disk (initramfs/initrd) support
+
+-> Executable file formats / Emulations
+[*] Kernel support for ELF binaries
+[*] Kernel support for scripts starting with #!
+
+-> Device Drivers
+  -> Character devices
+[*] Enable TTY
+
+-> Device Drivers
+  -> Character devices
+    -> Serial drivers
+[*] 8250/16550 and compatible serial support
+[*]   Console on 8250/16550 and compatible serial port
+
+-> File systems
+  -> Pseudo filesystems
+[*] /proc file system support
+[*] sysfs file system support
+
+
+
+
+
 * steps
 
 ** 00

@@ -75,13 +75,28 @@ Device Drivers > Network device support > Wireless LAN
   <M>       Prism54 USB support   
 
 
-** cpu
+** cpu, shmem, tmpfs, file locking
+
 
 Processor type and features 
 [*] Symmetric multi-processing support
 (4) Maximum number of CPUs 
 [ ] SMT (Hyperthreading) scheduler support (NEW) 
 [*] Multi-core scheduler support (NEW)
+
+File systems > Pseudo filesystems
+ <*> Userspace-driven configuration filesystem 
+
+General setup 
+ [*] Use full shmem filesystem 
+
+
+[*] Tmpfs virtual memory file system support (former shm fs)
+[*]   Tmpfs extended attributes
+
+File systems 
+ [*] Enable POSIX file locking API   
+
 
 
 ** chroot
@@ -152,7 +167,7 @@ make -j6 && make modules_install
 
 KERNELVER=4.8.17-fs-udev-gpt
 
-KERNELVER=4.8.17-fs-udev-gpt-netcard-cpu
+KERNELVER=4.8.17-fs-udev-gpt-netcard-cpu-tmpfs
 EXTENSION=201707010
 
 cp .config /boot/config-${KERNELVER}-${EXTENSION}

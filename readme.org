@@ -8,7 +8,141 @@
 |                        |   |   |
 | usb boot               |   |   |
 
+
+** kernel compile install qemu
   
+cd /usr/src/linux
+
+ls -lha .c*
+-rw-r--r-- 1 root root  59 Oct  3  2016 .cocciconfig
+-rw-r--r-- 1 root root 60K Jul  6 16:35 .config
+-rw-r--r-- 1 root root 29K Jul  6 16:00 .config-tiny-20170706
+-rw-r--r-- 1 root root 29K Jul  6 15:27 .config.old
+
+
+
+
+cp .config-tiny-20170706  .config 
+
+make menuconfig
+
+time nice -10 \
+make && make modules_install
+
+
+KERNELVER=4.8.17-fs-udev-gpt
+EXTENSION=201707010
+
+cp .config /boot/config-${KERNELVER}-${EXTENSION}
+cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
+cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
+cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
+
+/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
+
+
+qemu-system-x86_64 -m 1G -drive file=/dev/sdd
+
+
+
+** usb boot
+
+| MULTIUSER                  |
+|                            |
+| EFI GUID Partition support |
+|                            |
+| Udev                       |
+|                            |
+| PCI                        |
+|                            |
+| SCSI                       |
+|                            |
+| USB                        |
+|                            |
+
+CONFIG_MULTIUSER=y t
+
+https://github.com/sabotage-linux/sabotage/issues/356
+
+ Symbol: MULTIUSER [=n]                                                                                                                                     │  
+  │ Type  : boolean                                                                                                                                            │  
+  │ Prompt: Multiple users, groups and capabilities support                                                                                                    │  
+  │   Location:                                                                                                                                                │  
+  │     -> General setup                                                                                                                                       │  
+  │ (1)   -> Configure standard kernel features (expert users) (EXPERT [=y])                                                                                   │  
+  │   Defined at init/Kconfig:1392                                                                                                                             │  
+  │   Selected by: GRKERNSEC [=n]     
+
+
+Enable the block layer > Partition Types 
+
+[*] Advanced partition selection   
+ [*]   EFI GUID Partition support (NEW)
+
+https://wiki.archlinux.org/index.php/partitioning#GPT_Kernel_Support
+
+
+
+https://wiki.gentoo.org/wiki/Udev
+
+General setup  --->
+    [*] Configure standard kernel features (expert users)  --->
+        [ ] Enable deprecated sysfs features to support old userspace tools
+        [*] Enable signalfd() system call
+Enable the block layer  --->
+    [*] Block layer SG support v4
+Networking support  --->
+    Networking options  --->
+        <*> Unix domain sockets
+Device Drivers  --->
+    Generic Driver Options  --->
+        ()  path to uevent helper
+        [*] Maintain a devtmpfs filesystem to mount at /dev
+    < > ATA/ATAPI/MFM/RLL support (DEPRECATED)  --->
+File systems  --->
+    [*] Inotify support for userspace
+    Pseudo filesystems --->
+        [*] /proc file system support
+        [*] sysfs file system support
+
+nano /etc/portage/make.conf
+
+USE="udev"
+
+
+proxychains -f /root/proxychains.conf \
+emerge --ask --changed-use --deep @world
+
+rc-update add udev sysinit
+
+
+
+Bus options 
+ [*] PCI support  
+
+[*] Enable the block layer  ---> 
+
+Device Drivers > SCSI device support 
+ [*] SCSI device support 
+
+ [*] Serial ATA and Parallel ATA drivers (libata) 
+
+  [*]   AHCI SATA support                                                                                        │ │  
+  [*]   Platform AHCI SATA support  
+
+Device Drivers > USB support
+ [*]   Support for Host-side USB  
+
+ [*]     xHCI HCD (USB 3.0) support 
+ [*]     EHCI HCD (USB 2.0) support 
+ [*]     OHCI HCD (USB 1.1) support  
+ [*]     USB Mass Storage support
+
+time nice -10 \
+make && make modules_install
+
+
+
 
 ** Smallest Kernel Config
 
@@ -102,6 +236,8 @@ cp .config .config-tiny-fs-netcard-udev-20170706
 
 make menuconfig
 
+
+
 Enable the block layer > Partition Types 
 
 [*] Advanced partition selection   
@@ -192,9 +328,12 @@ File systems  --->
         [*] /proc file system support
         [*] sysfs file system support
 
-/etc/portage/make.conf
+nano /etc/portage/make.conf
+
 USE="udev"
 
+
+proxychains -f /root/proxychains.conf \
 emerge --ask --changed-use --deep @world
 
 rc-update add udev sysinit
@@ -265,7 +404,7 @@ ls -lha /tmp/wy/tmp/*
 
 # the file for transplantation
 
-ft="/tmp/wy/tmp/stage4_20170706_fs_netcard.tar.xz"
+ft="/tmp/stage4_20170706_fs_netcard.tar.xz"
 
 
 time nice -10 \
@@ -273,6 +412,15 @@ tar xvJpf \
 $ft \
 -C $td \
 --xattrs
+
+[2017-07-10 Mon 10:26] eusb
+
+real    4m59.926s
+user    0m34.913s
+sys     0m11.462s
+
+
+
 
 real    7m18.268s
 user    0m35.169s
@@ -289,9 +437,31 @@ blkid | grep sdd
 /dev/sdd4: UUID="23bd3386-a0b1-4f61-869e-6f7a06aff470" TYPE="ext4" PARTLABEL="fs2" PARTUUID="65e94ef4-c82d-41f9-8f15-1f3880fa62b7"
 /dev/sdd1: PARTLABEL="grub" PARTUUID="73fe4de1-47ff-4e48-95fe-dd2e01936272"
 
-/etc/fstabUsing a UUID for the root partition
+# eusb
+ blkid | grep sdd
+/dev/sdd1: PARTLABEL="grub" PARTUUID="1ecba64d-0ac4-4eaa-9434-b74631d723c5"
+/dev/sdd2: UUID="97269c3a-d27e-4911-9b51-112c9e1b4ff3" TYPE="ext2" PARTLABEL="boot" PARTUUID="6af13b38-807c-4f05-9485-51b3414ba211"
+/dev/sdd3: UUID="994231e5-a5b4-4888-9257-63e740d66cd7" TYPE="ext4" PARTLABEL="fs1" PARTUUID="78c3ed38-4b23-4b9f-9558-f8110e30aef7"
+/dev/sdd4: UUID="f606004e-a63b-4ed5-9953-d773ae8ddb69" TYPE="ext4" PARTLABEL="fs2" PARTUUID="f2c7e124-43c8-4d46-b24e-340c0cb876e9"
+localhost tmp # 
 
 
+
+/etc/fstab Using a UUID for the root partition
+
+# eusb
+cat <<EOF > $td/etc/fstab
+UUID=f606004e-a63b-4ed5-9953-d773ae8ddb69  /            ext4    noatime              0 1
+UUID=97269c3a-d27e-4911-9b51-112c9e1b4ff3  /boot        ext2    defaults,noatime     0 2
+
+tmpfs   /var/tmp/portage        tmpfs   uid=portage,gid=portage,mode=775,noatime    0 0
+tmpfs   /tmp         tmpfs   mode=775,noatime          0  0
+
+EOF
+
+
+
+# yusb
 cat <<EOF > $td/etc/fstab
 UUID=23bd3386-a0b1-4f61-869e-6f7a06aff470  /            ext4    noatime              0 1
 UUID=e5fa3175-0f37-4865-a24e-05898e3ac595  /boot        ext2    defaults,noatime     0 2
@@ -355,7 +525,12 @@ white y usb 8 G
 |           |          |     |      |             |
 |         3 | 131 3000 | 2.8 | fs1  | /mnt/sdd3   |
 |           |          |     |      |             |
+|         3 | 131 6000 | 5.7 |      |             |
+|           |          |     |      |             |
+|           |          |     |      |             |
 |         4 | 3000 -1  | 4.5 | fs2  | /mnt/sdd4   |
+|           |          |     |      |             |
+|         4 | 6000 -1  | 9.3 |      |             |
 |           |          |     |      |             |
 
 
@@ -382,9 +557,15 @@ name 2 boot
 
 mkpart primary 131 3000
 
+mkpart primary 131 6000
+
 name 3 fs1
 
 mkpart primary 3000 -1 
+
+mkpart primary 6000 -1 
+
+
 
 name 4 fs2
 

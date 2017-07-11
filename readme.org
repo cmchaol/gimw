@@ -31,6 +31,21 @@ proxychains -f /root/proxychains.conf emerge  net-misc/dhcpcd
 
 * kernel
 
+** epoll
+
+General setup > Configure standard kernel features (expert users) 
+[*]   Enable eventpoll support 
+
+Setup is 15836 bytes (padded to 15872 bytes).
+System is 2653 kB
+CRC 9a4522d9
+Kernel: arch/x86/boot/bzImage is ready  (#9)
+
+real    24m9.160s
+user    8m12.880s
+sys     0m36.365s
+
+
 ** netcard
 
 [*] Networking support  ---> 
@@ -105,7 +120,7 @@ File systems
 # transplantation directory
 td="/tmp/gentoo"
 
-mkdir $td
+# mkdir $td
 
 mount /dev/sdd4 $td
 
@@ -129,7 +144,7 @@ export PS1="(chroot) $PS1"
 
 mount -o size=90%,noatime,nodiratime -t tmpfs tmpfs /tmp
 
-mkdir /var/tmp/portage
+# mkdir /var/tmp/portage
 
 mount -o size=90%,noatime,nodiratime,uid=portage,gid=portage,mode=775 -t tmpfs tmpfs /var/tmp/portage 
 
@@ -167,8 +182,8 @@ make -j6 && make modules_install
 
 KERNELVER=4.8.17-fs-udev-gpt
 
-KERNELVER=4.8.17-fs-udev-gpt-netcard-cpu-tmpfs
-EXTENSION=201707010
+KERNELVER=4.8.17-fs-udev-gpt-netcard-cpu-tmpfs-epoll
+EXTENSION=201707011
 
 cp .config /boot/config-${KERNELVER}-${EXTENSION}
 cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}

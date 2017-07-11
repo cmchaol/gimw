@@ -31,6 +31,28 @@ proxychains -f /root/proxychains.conf emerge  net-misc/dhcpcd
 
 * kernel
 
+** Packet socket
+
+Networking support > Networking options
+ <*> Packet socket                                                                                              │ │  
+  <*>   Packet: sockets monitoring interface  
+
+                                                                   │ │  
+Setup is 15836 bytes (padded to 15872 bytes).
+System is 2668 kB
+CRC d28c552d
+Kernel: arch/x86/boot/bzImage is ready  (#10)
+
+real    2m3.265s
+user    0m18.129s
+sys     0m3.039s
+
+
+https://forums.opensuse.org/showthread.php/430091-DHCP-gives-error-when-trying-to-start-service
+
+https://forums.gentoo.org/viewtopic-p-4995041.html?sid=d3a628503943a14f8f7b2e815b05f9c6
+
+
 ** epoll
 
 General setup > Configure standard kernel features (expert users) 
@@ -120,7 +142,7 @@ File systems
 # transplantation directory
 td="/tmp/gentoo"
 
-# mkdir $td
+mkdir $td
 
 mount /dev/sdd4 $td
 
@@ -182,7 +204,7 @@ make -j6 && make modules_install
 
 KERNELVER=4.8.17-fs-udev-gpt
 
-KERNELVER=4.8.17-fs-udev-gpt-netcard-cpu-tmpfs-epoll
+KERNELVER=4.8.17-fs-udev-gpt-netcard-cpu-tmpfs-epoll-packet
 EXTENSION=201707011
 
 cp .config /boot/config-${KERNELVER}-${EXTENSION}

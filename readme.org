@@ -1,3 +1,839 @@
+* scenarios
+
+** build tiny kernel
+
+|    | download stage3       |
+|    |                       |
+|    | download portage      |
+|    |                       |
+| 20 | tar extraction        |
+|    |                       |
+| 30 | make.conf             |
+|    |                       |
+| 40 | chroot                |
+|    |                       |
+| 50 | profile, zone, locale |
+|    |                       |
+| 60 | proxychains, grub     |
+|    |                       |
+| 70 | passwd, user          |
+|    |                       |
+|    |                       |
+| 90 |                       |
+
+# working direcxtory
+w="/tmp/wy"
+
+mkdir $w
+
+*** tar compression
+
+inside the chroot
+
+cat <<EOF >  /tmp/stage4.excl
+.bash_history
+/mnt/*
+/tmp/*
+/proc/*
+/sys/*
+/dev/*
+EOF
+
+cat /tmp/stage4.excl
+
+time nice -10 \
+tar -X /tmp/stage4.excl -c / | xz -7vT0  > /tmp/stage4_20170711_tiny.tar.xz
+
+[2017-07-11 Tue 17:51]
+100 %     238.2 MiB / 1,342.0 MiB = 0.177   7.0 MiB/s       3:11             
+
+real    3m11.112s
+user    11m32.025s
+sys     0m3.495s
+
+
+
+*** 40
+
+td=$w
+
+mount -t proc proc  ${td}/proc
+mount --rbind /sys  ${td}/sys
+mount --make-rslave ${td}/sys
+mount --rbind /dev  ${td}/dev
+mount --make-rslave ${td}/dev
+
+chroot ${td} /bin/bash
+source /etc/profile
+export PS1="(chroot) $PS1"
+
+
+mount -o size=90%,noatime,nodiratime -t tmpfs tmpfs /tmp
+
+# mkdir /var/tmp/portage
+
+mount -o size=90%,noatime,nodiratime,uid=portage,gid=portage,mode=775 -t tmpfs tmpfs /var/tmp/portage 
+
+
+exit
+cd
+
+umount -l ${td}/dev{/shm,/pts,}
+umount -l ${td}{/sys,/proc}
+
+
+umount /dev/sdd2
+umount -l /dev/sdd4
+
+
+
+
+
+
+
+*** 20 
+
+#
+
+ls -lha /tmp/*.tar.*
+
+-rw-r--r-- 1 root root  63M Jul 11 08:51 /tmp/portage-latest.tar.xz
+-rw-r--r-- 1 root root 226M Jul  7 20:06 /tmp/stage3-amd64-hardened-20170706.tar.bz2
+
+
+s="/tmp/stage3-amd64-hardened-20170706.tar.bz2"
+
+
+time nice -10 \
+tar xvpf \
+$s \
+-C $w \
+--xattrs
+
+[2017-07-11 Tue 17:13]
+
+real    0m30.839s
+user    0m30.462s
+sys     0m2.340s
+
+
+p="/tmp/portage-latest.tar.xz"
+
+time nice -10 \
+tar xvpf \
+$p \
+-C $w/usr \
+--xattrs
+
+[2017-07-11 Tue 17:13]
+
+real    0m6.487s
+user    0m6.785s
+sys     0m2.926s
+
+
+du -hd1 $w | sort -rh
+
+1.8G    /tmp/wy
+1.7G    /tmp/wy/usr
+29M     /tmp/wy/var
+17M     /tmp/wy/lib64
+9.6M    /tmp/wy/etc
+9.0M    /tmp/wy/bin
+6.2M    /tmp/wy/sbin
+3.1M    /tmp/wy/lib32
+
+
+
+
+
+
+
+
+
+*** 30 
+
+# path of make.conf
+pm="$w/etc/portage/make.conf"
+
+cat $pm
+
+cat <<EOF >> $pm
+
+MAKEOPTS="-j5"
+PORTAGE_NICENESS=10
+
+GENTOO_MIRRORS="http://ftp.twaren.net/Linux/Gentoo/ http://ftp.jaist.ac.jp/pub/Linux/Gentoo/ http://ftp.iij.ad.jp/pub/linux/gentoo/"
+
+INPUT_DEVICES="evdev"
+
+VIDEO_CARDS="nouveau intel i915"
+# VIDEO_CARDS="nouveau"
+
+PAX_MARKINGS="XT" 
+
+EOF
+
+sed -i 's/USE=\".*$/USE=\"xattr bindist udev\"/' $pm
+
+sed  '' $pm
+
+
+
+
+mkdir $w/etc/portage/repos.conf
+
+cp $w/usr/share/portage/config/repos.conf $w/etc/portage/repos.conf/gentoo.conf
+
+
+sed -i 's/rsync.gentoo/rsync.tw.gentoo/' /tmp/wy/etc/portage/repos.conf/gentoo.conf
+
+sed  '' $w/etc/portage/repos.conf/gentoo.conf
+
+
+cp -L /etc/resolv.conf $w/etc/
+
+cp proxychains.conf $w/root
+
+
+
+
+*** 50
+
+eselect profile list
+
+[12]  hardened/linux/amd64 *
+
+
+eselect profile set 12
+
+eselect profile list
+
+
+ls /usr/share/zoneinfo
+
+echo "Asia/Taipei" > /etc/timezone
+
+emerge --config sys-libs/timezone-data
+
+
+sed '' /etc/locale.gen
+
+sed -i 's/#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen
+
+sed '' /etc/locale.gen
+
+
+locale-gen
+
+eselect locale list
+
+eselect locale set 2
+
+eselect locale list
+
+env-update && source /etc/profile
+
+
+
+
+*** 60
+
+emerge proxychains
+
+proxychains -f /root/proxychains.conf emerge grub
+
+
+*** 70
+
+passwd
+
+useradd -m -G users,wheel,audio,usb,video user1
+
+passwd user1
+
+
+
+
+** packages
+
+*** proxychains
+
+emerge proxychains
+
+proxychains -f /root/proxychains.conf bash
+
+
+*** Networking netifrc dhcpcd
+
+https://wiki.gentoo.org/wiki/Handbook:AMD64/Installation/System
+
+cat <<EOF >  /etc/conf.d/net
+
+dns_domain_lo="my_domain"
+
+config_enp1s0="dhcp"
+
+EOF
+
+cat /etc/conf.d/net
+
+proxychains -f /root/proxychains.conf emerge --noreplace net-misc/netifrc
+
+proxychains -f /root/proxychains.conf emerge  net-misc/dhcpcd
+
+
+
+
+
+
+** download portage
+
+p1="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots/portage-latest.tar.xz"
+
+wget $p1
+
+
+proxychains -f /home/c5766/proxychains.conf wget $p1
+
+
+# ##########
+
+portage
+
+http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots/
+
+http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots/portage-latest.tar.xz
+
+
+
+
+
+
+** download stage3
+
+proxychains -f /home/c5766/proxychains.conf bash
+
+
+# get the date of stage3
+p1="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
+
+p2=$(curl $p1) && echo $p2
+
+p3=$( echo $p2 | sed -e 's:.*/::g' -e 's: .*::g') && echo $p3
+
+
+# assemble and download the url of stage3
+p4="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds/current-stage3-amd64-hardened/"
+
+echo $p4$p3
+
+wget $p4$p3
+
+
+** kernel configuration
+
+*** epoll
+
+General setup > Configure standard kernel features (expert users) 
+[*]   Enable eventpoll support 
+
+Setup is 15836 bytes (padded to 15872 bytes).
+System is 2653 kB
+CRC 9a4522d9
+Kernel: arch/x86/boot/bzImage is ready  (#9)
+
+real    24m9.160s
+user    8m12.880s
+sys     0m36.365s
+
+
+
+*** Packet socket
+
+Networking support > Networking options
+ <*> Packet socket                                                                                              │ │  
+  <*>   Packet: sockets monitoring interface  
+
+
+Setup is 15836 bytes (padded to 15872 bytes).
+System is 2668 kB
+CRC d28c552d
+Kernel: arch/x86/boot/bzImage is ready  (#10)
+
+real    2m3.265s
+user    0m18.129s
+sys     0m3.039s
+
+
+https://forums.opensuse.org/showthread.php/430091-DHCP-gives-error-when-trying-to-start-service
+
+https://forums.gentoo.org/viewtopic-p-4995041.html?sid=d3a628503943a14f8f7b2e815b05f9c6
+
+
+
+
+*** netcard
+
+[*] Networking support  ---> 
+ Networking options
+ [*] TCP/IP networking
+
+Device Drivers
+ [*] Network device support  ---> 
+Ethernet driver support
+[*]   Realtek devices
+<M>     Realtek 8169 gigabit ethernet support # M4A87TD/USB
+
+01:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. RTL8111/8168/8411 PCI Express Gigabit Ethernet Controller (rev 06)
+        Subsystem: ASUSTeK Computer Inc. P8P67 and other motherboards
+        Flags: bus master, fast devsel, latency 0, IRQ 29, NUMA node 0
+        I/O ports at c800 [size=256]
+        Memory at d3fff000 (64-bit, prefetchable) [size=4K]
+        Memory at d3ff8000 (64-bit, prefetchable) [size=16K]
+        Capabilities: [40] Power Management version 3
+        Capabilities: [50] MSI: Enable+ Count=1/1 Maskable- 64bit+
+        Capabilities: [70] Express Endpoint, MSI 01
+        Capabilities: [b0] MSI-X: Enable- Count=4 Masked-
+        Capabilities: [d0] Vital Product Data
+        Capabilities: [100] Advanced Error Reporting
+        Capabilities: [140] Virtual Channel
+        Capabilities: [160] Device Serial Number 01-00-00-00-68-4c-e0-00
+        Kernel driver in use: r8169
+        Kernel modules: r8169
+
+
+
+[*]   Atheros devices  
+<M>     Atheros L1C Gigabit Ethernet support  # h77md3h 
+
+Networking support > Wireless
+<*>   cfg80211 - wireless configuration API 
+<M>   Generic IEEE 802.11 Networking Stack (mac80211) 
+
+Device Drivers > Network device support > Wireless LAN 
+[*]   Intersil devices (NEW)  
+ <M>     Softmac Prism54 support                                                                                │ │  
+  <M>       Prism54 USB support   
+
+
+
+
+*** cpu, shmem, tmpfs, file locking
+
+
+Processor type and features 
+[*] Symmetric multi-processing support
+(4) Maximum number of CPUs 
+[ ] SMT (Hyperthreading) scheduler support (NEW) 
+[*] Multi-core scheduler support (NEW)
+
+File systems > Pseudo filesystems
+ <*> Userspace-driven configuration filesystem 
+
+General setup 
+ [*] Use full shmem filesystem 
+
+File systems > Pseudo filesystems
+[*] Tmpfs virtual memory file system support (former shm fs)   
+ [*]   Tmpfs POSIX Access Control Lists
+ -*-   Tmpfs extended attributes                                                                                │ │  
+
+File systems 
+ [*] Enable POSIX file locking API   
+
+
+
+
+
+*** Smallest Kernel Config
+
+http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2015-edition.html
+
+[*] 64-bit kernel
+
+-> General setup
+  -> Configure standard kernel features
+[*] Enable support for printk
+
+-> General setup
+[*] Initial RAM filesystem and RAM disk (initramfs/initrd) support
+
+-> Executable file formats / Emulations
+[*] Kernel support for ELF binaries
+[*] Kernel support for scripts starting with #!
+
+-> Device Drivers
+  -> Character devices
+[*] Enable TTY
+
+-> Device Drivers
+  -> Character devices
+    -> Serial drivers
+[*] 8250/16550 and compatible serial support
+[*]   Console on 8250/16550 and compatible serial port
+
+-> File systems
+  -> Pseudo filesystems
+[*] /proc file system support
+[*] sysfs file system support
+
+
+
+
+
+
+
+
+*** usb boot
+
+| MULTIUSER                  |
+|                            |
+| EFI GUID Partition support |
+|                            |
+| Udev                       |
+|                            |
+| PCI                        |
+|                            |
+| SCSI                       |
+|                            |
+| USB                        |
+|                            |
+| piix                       |
+|                            |
+
+CONFIG_MULTIUSER=y t
+
+https://github.com/sabotage-linux/sabotage/issues/356
+
+ Symbol: MULTIUSER [=n]                                                                                                                                     │  
+  │ Type  : boolean                                                                                                                                            │  
+  │ Prompt: Multiple users, groups and capabilities support                                                                                                    │  
+  │   Location:                                                                                                                                                │  
+  │     -> General setup                                                                                                                                       │  
+  │ (1)   -> Configure standard kernel features (expert users) (EXPERT [=y])                                                                                   │  
+  │   Defined at init/Kconfig:1392                                                                                                                             │  
+  │   Selected by: GRKERNSEC [=n]     
+
+
+Enable the block layer > Partition Types 
+
+[*] Advanced partition selection   
+ [*]   EFI GUID Partition support (NEW)
+
+https://wiki.archlinux.org/index.php/partitioning#GPT_Kernel_Support
+
+
+
+https://wiki.gentoo.org/wiki/Udev
+
+General setup  --->
+    [*] Configure standard kernel features (expert users)  --->
+        [ ] Enable deprecated sysfs features to support old userspace tools
+        [*] Enable signalfd() system call
+Enable the block layer  --->
+    [*] Block layer SG support v4
+Networking support  --->
+    Networking options  --->
+        <*> Unix domain sockets
+Device Drivers  --->
+    Generic Driver Options  --->
+        ()  path to uevent helper
+        [*] Maintain a devtmpfs filesystem to mount at /dev
+    < > ATA/ATAPI/MFM/RLL support (DEPRECATED)  --->
+File systems  --->
+    [*] Inotify support for userspace
+    Pseudo filesystems --->
+        [*] /proc file system support
+        [*] sysfs file system support
+
+nano /etc/portage/make.conf
+
+USE="udev"
+
+
+proxychains -f /root/proxychains.conf \
+emerge --ask --changed-use --deep @world
+
+rc-update add udev sysinit
+
+
+
+Bus options 
+ [*] PCI support  
+
+[*] Enable the block layer  ---> 
+
+Device Drivers > SCSI device support 
+ [*] SCSI device support 
+
+ [*] Serial ATA and Parallel ATA drivers (libata) 
+
+  [*]   AHCI SATA support                                                                                        │ │  
+  [*]   Platform AHCI SATA support  
+
+Device Drivers > USB support
+ [*]   Support for Host-side USB  
+
+ [*]     xHCI HCD (USB 3.0) support 
+ [*]     EHCI HCD (USB 2.0) support 
+ [*]     OHCI HCD (USB 1.1) support  
+ [*]     USB Mass Storage support
+
+Symbol: ATA_PIIX [=y]                                                                                                                                      │  
+
+  │ Type  : tristate                                                                                                                                           │  
+  │ Prompt: Intel ESB, ICH, PIIX3, PIIX4 PATA/SATA support                                                                                                     │  
+  │   Location:                                                                                                                                                │  
+  │     -> Device Drivers                                                                                                                                      │  
+  │       -> Serial ATA and Parallel ATA drivers (libata) (ATA [=y])                                                                                           │  
+  │         -> ATA SFF support (for legacy IDE and PATA) (ATA_SFF [=y])                                                                                        │  
+  │ (1)       -> ATA BMDMA support (ATA_BMDMA [=y])                                                                                                            │  
+  │   Defined at drivers/ata/Kconfig:260                                                                                                                       │  
+  │   Depends on: ATA [=y] && ATA_SFF [=y] && ATA_BMDMA [=y] && PCI [=y]                                                                                       │  
+ 
+
+time nice -10 \
+make && make modules_install
+
+
+
+
+
+
+
+
+ 
+
+** kernel compile, make, cp, qemu
+
+cd /usr/src/linux
+
+make menuconfig
+
+time nice -10 \
+make -j6 && make modules_install
+
+
+KERNELVER=4.8.17-fs-udev-gpt
+
+KERNELVER=4.8.17-fs-udev-gpt-netcard-cpu-tmpfs-epoll-packet
+EXTENSION=201707011
+
+cp .config /boot/config-${KERNELVER}-${EXTENSION}
+cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
+cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
+cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
+
+/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
+
+qemu-system-x86_64 -m 1G -drive file=/dev/sdd
+
+
+** chroot
+
+td=$wy
+
+mount -t proc proc  ${td}/proc
+mount --rbind /sys  ${td}/sys
+mount --make-rslave ${td}/sys
+mount --rbind /dev  ${td}/dev
+mount --make-rslave ${td}/dev
+
+chroot ${td} /bin/bash
+source /etc/profile
+export PS1="(chroot) $PS1"
+
+
+mount -o size=90%,noatime,nodiratime -t tmpfs tmpfs /tmp
+
+# mkdir /var/tmp/portage
+
+mount -o size=90%,noatime,nodiratime,uid=portage,gid=portage,mode=775 -t tmpfs tmpfs /var/tmp/portage 
+
+
+exit
+cd
+
+umount -l ${td}/dev{/shm,/pts,}
+umount -l ${td}{/sys,/proc}
+
+
+umount /dev/sdd2
+umount -l /dev/sdd4
+
+
+
+
+
+
+** usb partitioning
+
+# white y usb 8g
+
+| partition | mib      |   G | name | mount point |
+|-----------+----------+-----+------+-------------|
+|         1 | 1 3      |     | grub |             |
+|           |          |     |      |             |
+|         2 | 3 131    | 0.1 | boot | /mnt/sdd2   |
+|           |          |     |      |             |
+|           |          |     |      |             |
+|         3 | 131 3000 | 2.8 | fs1  | /mnt/sdd3   |
+|           |          |     |      |             |
+|         3 | 131 6000 | 5.7 |      |             |
+|           |          |     |      |             |
+|           |          |     |      |             |
+|         4 | 3000 -1  | 4.5 | fs2  | /mnt/sdd4   |
+|           |          |     |      |             |
+|         4 | 6000 -1  | 9.3 |      |             |
+|           |          |     |      |             |
+
+
+parted -a optimal /dev/sdd
+
+
+(parted)
+
+mklabel gpt
+
+unit mib
+
+mkpart primary 1 3
+
+name 1 grub
+
+set 1 bios_grub on
+
+print
+
+mkpart primary 3 131
+
+name 2 boot
+
+
+# yusb 8g
+mkpart primary 131 3000    
+
+# 16g
+mkpart primary 131 6000    
+
+name 3 fs1
+
+
+# yusb 8g
+mkpart primary 3000 -1     
+
+# 16g
+mkpart primary 6000 -1     
+
+name 4 fs2
+
+quit
+
+
+
+mkfs.ext2 -T small /dev/sdd2
+
+mkfs.ext4 -j -T small /dev/sdd3
+
+mkfs.ext4 -j -T small /dev/sdd4
+
+
+
+
+
+
+
+
+
+
+** tar compression
+
+inside the chroot
+
+cat <<EOF >  /tmp/stage4.excl
+.bash_history
+/mnt/*
+/tmp/*
+/proc/*
+/sys/*
+/dev/*
+EOF
+
+cat /tmp/stage4.excl
+
+time nice -10 \
+tar -X /tmp/stage4.excl -c / | xz -7vT0  > /tmp/stage4_20170711_fs_netcard.tar.xz
+
+100 %      445.8 MiB / 2282.3 MiB = 0.195   7.1 MiB/s       5:19             
+
+
+
+
+** tar extraction
+
+#
+
+ls -lha /tmp/*.tar.*
+
+-rw-r--r-- 1 root root  63M Jul 11 08:51 /tmp/portage-latest.tar.xz
+-rw-r--r-- 1 root root 226M Jul  7 20:06 /tmp/stage3-amd64-hardened-20170706.tar.bz2
+
+
+s="/tmp/stage3-amd64-hardened-20170706.tar.bz2"
+
+
+time nice -10 \
+tar xvpf \
+$s \
+-C $w \
+--xattrs
+
+[2017-07-11 Tue 17:13]
+
+real    0m30.839s
+user    0m30.462s
+sys     0m2.340s
+
+
+p="/tmp/portage-latest.tar.xz"
+
+time nice -10 \
+tar xvpf \
+$p \
+-C $w/usr \
+--xattrs
+
+[2017-07-11 Tue 17:13]
+
+real    0m6.487s
+user    0m6.785s
+sys     0m2.926s
+
+
+du -hd1 $w | sort -rh
+
+1.8G    /tmp/wy
+1.7G    /tmp/wy/usr
+29M     /tmp/wy/var
+17M     /tmp/wy/lib64
+9.6M    /tmp/wy/etc
+9.0M    /tmp/wy/bin
+6.2M    /tmp/wy/sbin
+3.1M    /tmp/wy/lib32
+
+
+
+
+
+
+
+
+
+
+
+
+
 * steps tiny xorg tmpfs
  
 | 24 | extraction                  |   |
@@ -527,14 +1363,42 @@ ls -lha /tmp/st*
 
 /tmp/stage4_20170706_tiny.tar.xz
 
-s="/tmp/stage4_20170706_tiny.tar.xz"
+/tmp/stage4_20170711_fs_netcard.tar.xz
+
+s="/tmp/stage4_20170711_fs_netcard.tar.xz"
 
 
 time nice -10 \
 tar xvpf \
 $s \
--C /tmp/wy \
+-C $wy \
 --xattrs
+
+[2017-07-11 Tue 16:14]
+
+real    0m30.151s
+user    0m29.748s
+sys     0m7.270s
+
+
+[2017-07-11 Tue 16:14]
+
+du -hd1 $wy | sort -rh
+
+2.7G    /tmp/wy/usr
+2.7G    /tmp/wy
+37M     /tmp/wy/var
+19M     /tmp/wy/lib64
+9.7M    /tmp/wy/etc
+9.0M    /tmp/wy/bin
+6.2M    /tmp/wy/sbin
+5.7M    /tmp/wy/boot
+3.1M    /tmp/wy/lib32
+12K     /tmp/wy/home
+4.0K    /tmp/wy/root
+
+
+
 
 [2017-07-11 Tue 11:38]
 
@@ -593,144 +1457,7 @@ tar -X /tmp/stage4.excl -c / | xz -1vT0  > /tmp/stage4_20170706_tiny.tar.xz
 100 %      518.5 MiB / 2172.1 MiB = 0.239    28 MiB/s       1:17   
 
 
-* packages
-
-
-
-** proxychains
-
-emerge proxychains
-
-proxychains -f /root/proxychains.conf bash
-
-** Networking netifrc dhcpcd
-
-https://wiki.gentoo.org/wiki/Handbook:AMD64/Installation/System
-
-cat <<EOF >  /etc/conf.d/net
-
-dns_domain_lo="my_domain"
-
-config_enp1s0="dhcp"
-
-EOF
-
-cat /etc/conf.d/net
-
-proxychains -f /root/proxychains.conf emerge --noreplace net-misc/netifrc
-
-proxychains -f /root/proxychains.conf emerge  net-misc/dhcpcd
-
-
-
-
 * kernel
-
-** Packet socket
-
-Networking support > Networking options
- <*> Packet socket                                                                                              │ │  
-  <*>   Packet: sockets monitoring interface  
-
-                                                                   │ │  
-Setup is 15836 bytes (padded to 15872 bytes).
-System is 2668 kB
-CRC d28c552d
-Kernel: arch/x86/boot/bzImage is ready  (#10)
-
-real    2m3.265s
-user    0m18.129s
-sys     0m3.039s
-
-
-https://forums.opensuse.org/showthread.php/430091-DHCP-gives-error-when-trying-to-start-service
-
-https://forums.gentoo.org/viewtopic-p-4995041.html?sid=d3a628503943a14f8f7b2e815b05f9c6
-
-
-** epoll
-
-General setup > Configure standard kernel features (expert users) 
-[*]   Enable eventpoll support 
-
-Setup is 15836 bytes (padded to 15872 bytes).
-System is 2653 kB
-CRC 9a4522d9
-Kernel: arch/x86/boot/bzImage is ready  (#9)
-
-real    24m9.160s
-user    8m12.880s
-sys     0m36.365s
-
-
-** netcard
-
-[*] Networking support  ---> 
- Networking options
- [*] TCP/IP networking
-
-Device Drivers
- [*] Network device support  ---> 
-Ethernet driver support
-[*]   Realtek devices
-<M>     Realtek 8169 gigabit ethernet support # M4A87TD/USB
-
-01:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. RTL8111/8168/8411 PCI Express Gigabit Ethernet Controller (rev 06)
-        Subsystem: ASUSTeK Computer Inc. P8P67 and other motherboards
-        Flags: bus master, fast devsel, latency 0, IRQ 29, NUMA node 0
-        I/O ports at c800 [size=256]
-        Memory at d3fff000 (64-bit, prefetchable) [size=4K]
-        Memory at d3ff8000 (64-bit, prefetchable) [size=16K]
-        Capabilities: [40] Power Management version 3
-        Capabilities: [50] MSI: Enable+ Count=1/1 Maskable- 64bit+
-        Capabilities: [70] Express Endpoint, MSI 01
-        Capabilities: [b0] MSI-X: Enable- Count=4 Masked-
-        Capabilities: [d0] Vital Product Data
-        Capabilities: [100] Advanced Error Reporting
-        Capabilities: [140] Virtual Channel
-        Capabilities: [160] Device Serial Number 01-00-00-00-68-4c-e0-00
-        Kernel driver in use: r8169
-        Kernel modules: r8169
-
-
-
-[*]   Atheros devices  
-<M>     Atheros L1C Gigabit Ethernet support  # h77md3h 
-
-Networking support > Wireless
-<*>   cfg80211 - wireless configuration API 
-<M>   Generic IEEE 802.11 Networking Stack (mac80211) 
-
-Device Drivers > Network device support > Wireless LAN 
-[*]   Intersil devices (NEW)  
- <M>     Softmac Prism54 support                                                                                │ │  
-  <M>       Prism54 USB support   
-
-
-** cpu, shmem, tmpfs, file locking
-
-
-Processor type and features 
-[*] Symmetric multi-processing support
-(4) Maximum number of CPUs 
-[ ] SMT (Hyperthreading) scheduler support (NEW) 
-[*] Multi-core scheduler support (NEW)
-
-File systems > Pseudo filesystems
- <*> Userspace-driven configuration filesystem 
-
-General setup 
- [*] Use full shmem filesystem 
-
-File systems > Pseudo filesystems
-[*] Tmpfs virtual memory file system support (former shm fs)   
- [*]   Tmpfs POSIX Access Control Lists
- -*-   Tmpfs extended attributes                                                                                │ │  
-
-File systems 
- [*] Enable POSIX file locking API   
-
-
 
 ** chroot
 
@@ -812,156 +1539,6 @@ cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
 
 
 qemu-system-x86_64 -m 1G -drive file=/dev/sdd
-
-
-
-** usb boot
-
-| MULTIUSER                  |
-|                            |
-| EFI GUID Partition support |
-|                            |
-| Udev                       |
-|                            |
-| PCI                        |
-|                            |
-| SCSI                       |
-|                            |
-| USB                        |
-|                            |
-| piix                       |
-|                            |
-
-CONFIG_MULTIUSER=y t
-
-https://github.com/sabotage-linux/sabotage/issues/356
-
- Symbol: MULTIUSER [=n]                                                                                                                                     │  
-  │ Type  : boolean                                                                                                                                            │  
-  │ Prompt: Multiple users, groups and capabilities support                                                                                                    │  
-  │   Location:                                                                                                                                                │  
-  │     -> General setup                                                                                                                                       │  
-  │ (1)   -> Configure standard kernel features (expert users) (EXPERT [=y])                                                                                   │  
-  │   Defined at init/Kconfig:1392                                                                                                                             │  
-  │   Selected by: GRKERNSEC [=n]     
-
-
-Enable the block layer > Partition Types 
-
-[*] Advanced partition selection   
- [*]   EFI GUID Partition support (NEW)
-
-https://wiki.archlinux.org/index.php/partitioning#GPT_Kernel_Support
-
-
-
-https://wiki.gentoo.org/wiki/Udev
-
-General setup  --->
-    [*] Configure standard kernel features (expert users)  --->
-        [ ] Enable deprecated sysfs features to support old userspace tools
-        [*] Enable signalfd() system call
-Enable the block layer  --->
-    [*] Block layer SG support v4
-Networking support  --->
-    Networking options  --->
-        <*> Unix domain sockets
-Device Drivers  --->
-    Generic Driver Options  --->
-        ()  path to uevent helper
-        [*] Maintain a devtmpfs filesystem to mount at /dev
-    < > ATA/ATAPI/MFM/RLL support (DEPRECATED)  --->
-File systems  --->
-    [*] Inotify support for userspace
-    Pseudo filesystems --->
-        [*] /proc file system support
-        [*] sysfs file system support
-
-nano /etc/portage/make.conf
-
-USE="udev"
-
-
-proxychains -f /root/proxychains.conf \
-emerge --ask --changed-use --deep @world
-
-rc-update add udev sysinit
-
-
-
-Bus options 
- [*] PCI support  
-
-[*] Enable the block layer  ---> 
-
-Device Drivers > SCSI device support 
- [*] SCSI device support 
-
- [*] Serial ATA and Parallel ATA drivers (libata) 
-
-  [*]   AHCI SATA support                                                                                        │ │  
-  [*]   Platform AHCI SATA support  
-
-Device Drivers > USB support
- [*]   Support for Host-side USB  
-
- [*]     xHCI HCD (USB 3.0) support 
- [*]     EHCI HCD (USB 2.0) support 
- [*]     OHCI HCD (USB 1.1) support  
- [*]     USB Mass Storage support
-
-Symbol: ATA_PIIX [=y]                                                                                                                                      │  
-
-  │ Type  : tristate                                                                                                                                           │  
-  │ Prompt: Intel ESB, ICH, PIIX3, PIIX4 PATA/SATA support                                                                                                     │  
-  │   Location:                                                                                                                                                │  
-  │     -> Device Drivers                                                                                                                                      │  
-  │       -> Serial ATA and Parallel ATA drivers (libata) (ATA [=y])                                                                                           │  
-  │         -> ATA SFF support (for legacy IDE and PATA) (ATA_SFF [=y])                                                                                        │  
-  │ (1)       -> ATA BMDMA support (ATA_BMDMA [=y])                                                                                                            │  
-  │   Defined at drivers/ata/Kconfig:260                                                                                                                       │  
-  │   Depends on: ATA [=y] && ATA_SFF [=y] && ATA_BMDMA [=y] && PCI [=y]                                                                                       │  
- 
-
-time nice -10 \
-make && make modules_install
-
-
-
-
-** Smallest Kernel Config
-
-http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2015-edition.html
-
-[*] 64-bit kernel
-
--> General setup
-  -> Configure standard kernel features
-[*] Enable support for printk
-
--> General setup
-[*] Initial RAM filesystem and RAM disk (initramfs/initrd) support
-
--> Executable file formats / Emulations
-[*] Kernel support for ELF binaries
-[*] Kernel support for scripts starting with #!
-
--> Device Drivers
-  -> Character devices
-[*] Enable TTY
-
--> Device Drivers
-  -> Character devices
-    -> Serial drivers
-[*] 8250/16550 and compatible serial support
-[*]   Console on 8250/16550 and compatible serial port
-
--> File systems
-  -> Pseudo filesystems
-[*] /proc file system support
-[*] sysfs file system support
-
-
 
 
 
@@ -1870,101 +2447,6 @@ du -hd1 $wy | sort -rh
 9.0M    /tmp/wy/bin
 6.2M    /tmp/wy/sbin
 3.1M    /tmp/wy/lib32
-
-
-** 22
-
-p1="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots/portage-latest.tar.xz"
-
-cd /tmp/dy
-
-
-
-wget $p1
-
-
-proxychains -f /home/c5766/proxychains.conf wget $p1
-
-
-# ##########
-
-portage
-
-http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots/
-
-http://ftp.jaist.ac.jp/pub/Linux/Gentoo/snapshots/portage-latest.tar.xz
-
-
-
-
-** 20
-
-
-p1="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
-
-# curl $p1 | awk '{print $1}'
-
-p2=$(proxychains -f /home/c5766/proxychains.conf curl $p1)
-
-p2=$(curl $p1)
-
-
-
-
-p3=$( echo $p2 | sed -e 's:.*/::g' -e 's: .*::g') 
-
-p4="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds/current-stage3-amd64-hardened/"
-
-
-
-proxychains -f /home/c5766/proxychains.conf wget $p4$p3
-
-
-wget $p4$p3
-
-
-
-
-#+HEADERS: :results silent
-
-#+HEADERS: :results raw
-#+HEADERS: :dir /tmp/dy
-#+BEGIN_SRC sh
-
-
-p1="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
-
-# curl $p1 | awk '{print $1}'
-
-p2=$(curl $p1)
-
-p3=$( echo $p2 | sed -e 's:.*/::g' -e 's: .*::g') 
-
-p4="http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds/current-stage3-amd64-hardened/"
-
-wget $p4$p3
-
-#+END_SRC
-
-
-
-
-stage3
-
-
-http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds/
-
-
-http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt
-
-# Latest as of Thu, 06 Jul 2017 00:30:01 +0000
-# ts=1499301001
-20170629/hardened/stage3-amd64-hardened-20170629.tar.bz2 236310266
-
-
-http://ftp.jaist.ac.jp/pub/Linux/Gentoo/releases/amd64/autobuilds/current-stage3-amd64-hardened/stage3-amd64-hardened-20170629.tar.bz2
-
-
 
 
 ** 10

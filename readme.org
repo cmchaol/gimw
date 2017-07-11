@@ -1,3 +1,598 @@
+* steps tiny xorg tmpfs
+ 
+| 24 | extraction                  |   |
+|    |                             |   |
+| 30 | modify make.conf            |   |
+|    |                             |   |
+| 32 | chroot                      |   |
+|    |                             |   |
+| 34 | kernel compile install qemu |   |
+|    |                             |   |
+| 42 | tiny kernel                 | v |
+|    |                             |   |
+| 44 | disk, netcard, cpu          | v |
+|    |                             |   |
+| 46 | udev                        | v |
+|    |                             |   |
+| 48 |                             |   |
+|    |                             |   |
+| 92 | tar                         |   |
+
+# working direcxtory
+wy="/tmp/wy"
+
+mkdir $wy
+
+** 34
+  
+cd /usr/src/linux
+
+make menuconfig
+
+time nice -10 \
+make -j6 && make modules_install
+
+
+KERNELVER=4.8.17-fs-udev-gpt
+
+KERNELVER=4.8.17-fs-udev-gpt-netcard-cpu-tmpfs-epoll-packet
+EXTENSION=201707011
+
+cp .config /boot/config-${KERNELVER}-${EXTENSION}
+cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
+cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
+cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
+
+/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
+
+
+qemu-system-x86_64 -m 1G -drive file=/dev/sdd
+
+
+
+
+
+** 32 
+
+td=$wy
+
+mount -t proc proc  ${thedir}/proc
+mount --rbind /sys  ${thedir}/sys
+mount --make-rslave ${thedir}/sys
+mount --rbind /dev  ${thedir}/dev
+mount --make-rslave ${thedir}/dev
+
+chroot ${thedir} /bin/bash
+source /etc/profile
+export PS1="(chroot) $PS1"
+
+
+mount -o size=90%,noatime,nodiratime -t tmpfs tmpfs /tmp
+
+# mkdir /var/tmp/portage
+
+mount -o size=90%,noatime,nodiratime,uid=portage,gid=portage,mode=775 -t tmpfs tmpfs /var/tmp/portage 
+
+
+exit
+cd
+
+umount -l ${thedir}/dev{/shm,/pts,}
+umount -l ${thedir}{/sys,/proc}
+
+
+umount /dev/sdd2
+umount -l /dev/sdd4
+
+
+
+
+** 48
+
+
+Enable the block layer > Partition Types 
+
+[*] Advanced partition selection   
+ [*]   EFI GUID Partition support (NEW)
+
+https://wiki.archlinux.org/index.php/partitioning#GPT_Kernel_Support
+
+CONFIG_DEVTMPFS="y" 
+CONFIG_DEVTMPFS_MOUNT="y" 
+
+Device Drivers > Serial ATA and Parallel ATA drivers (libata)
+
+CONFIG_SATA_AHCI="y" 
+CONFIG_SATA_AHCI_PLATEFORM="y"
+
+https://forums.gentoo.org/viewtopic-t-942728-start-0.html
+
+
+General setup > Configure standard kernel features (expert users) 
+
+CONFIG_MULTIUSER=y t
+
+https://github.com/sabotage-linux/sabotage/issues/356
+
+CONFIG_FILE_LOCKING:                                                                                                                                       │  
+  │                                                                                                                                                            │  
+  │ This option enables standard file locking support, required                                                                                                │  
+  │ for filesystems like NFS and for the flock() system                                                                                                        │  
+  │ call. Disabling this option saves about 11k.                                                                                                               │  
+  │                                                                                                                                                            │  
+  │ Symbol: FILE_LOCKING [=n]                                                                                                                                  │  
+  │ Type  : boolean                                                                                                                                            │  
+  │ Prompt: Enable POSIX file locking API                                                                                                                      │  
+  │   Location:                                                                                                                                                │  
+  │     -> File systems                                                                                                                                        │  
+  │   Defined at fs/Kconfig:79 
+
+
+http://cateee.net/lkddb/web-lkddb/FILE_LOCKING.html
+
+
+
+** 46
+
+https://wiki.gentoo.org/wiki/Udev
+
+General setup  --->
+    [*] Configure standard kernel features (expert users)  --->
+        [ ] Enable deprecated sysfs features to support old userspace tools
+        [*] Enable signalfd() system call
+Enable the block layer  --->
+    [*] Block layer SG support v4
+Networking support  --->
+    Networking options  --->
+        <*> Unix domain sockets
+Device Drivers  --->
+    Generic Driver Options  --->
+        ()  path to uevent helper
+        [*] Maintain a devtmpfs filesystem to mount at /dev
+    < > ATA/ATAPI/MFM/RLL support (DEPRECATED)  --->
+File systems  --->
+    [*] Inotify support for userspace
+    Pseudo filesystems --->
+        [*] /proc file system support
+        [*] sysfs file system support
+
+nano /etc/portage/make.conf
+
+USE="udev"
+
+
+proxychains -f /root/proxychains.conf \
+emerge --ask --changed-use --deep @world
+
+rc-update add udev sysinit
+
+
+** 94
+
+# transplantation directory
+td="/tmp/gentoo"
+
+mkdir $td
+
+mount /dev/sdd4 $td
+
+mkdir $td/boot
+
+mount /dev/sdd2 $td/boot
+
+
+
+ls -lha /tmp/wy/tmp/*
+
+-rw-r--r-- 1 root root 548M Jul  6 16:50 /tmp/wy/tmp/stage4_20170706_fs_netcard.tar.xz
+-rw-r--r-- 1 root root 519M Jul  6 15:53 /tmp/wy/tmp/stage4_20170706_tiny.tar.xz
+
+
+# the file for transplantation
+
+ft="/tmp/stage4_20170706_fs_netcard.tar.xz"
+
+
+time nice -10 \
+tar xvJpf \
+$ft \
+-C $td \
+--xattrs
+
+[2017-07-10 Mon 10:26] eusb
+
+real    4m59.926s
+user    0m34.913s
+sys     0m11.462s
+
+
+
+
+real    7m18.268s
+user    0m35.169s
+sys     0m11.729s
+
+
+
+
+blkid | grep sdd
+
+blkid | grep sdd
+/dev/sdd2: UUID="e5fa3175-0f37-4865-a24e-05898e3ac595" TYPE="ext2" PARTLABEL="boot" PARTUUID="f909b23f-466b-441d-8633-42a027aa39cc"
+/dev/sdd3: UUID="9ad52a79-b117-46af-a896-13ef5a771b3b" TYPE="ext4" PARTLABEL="fs1" PARTUUID="59f4637d-0cd8-414f-bc27-1873761a5b87"
+/dev/sdd4: UUID="23bd3386-a0b1-4f61-869e-6f7a06aff470" TYPE="ext4" PARTLABEL="fs2" PARTUUID="65e94ef4-c82d-41f9-8f15-1f3880fa62b7"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="73fe4de1-47ff-4e48-95fe-dd2e01936272"
+
+# eusb
+ blkid | grep sdd
+/dev/sdd1: PARTLABEL="grub" PARTUUID="1ecba64d-0ac4-4eaa-9434-b74631d723c5"
+/dev/sdd2: UUID="97269c3a-d27e-4911-9b51-112c9e1b4ff3" TYPE="ext2" PARTLABEL="boot" PARTUUID="6af13b38-807c-4f05-9485-51b3414ba211"
+/dev/sdd3: UUID="994231e5-a5b4-4888-9257-63e740d66cd7" TYPE="ext4" PARTLABEL="fs1" PARTUUID="78c3ed38-4b23-4b9f-9558-f8110e30aef7"
+/dev/sdd4: UUID="f606004e-a63b-4ed5-9953-d773ae8ddb69" TYPE="ext4" PARTLABEL="fs2" PARTUUID="f2c7e124-43c8-4d46-b24e-340c0cb876e9"
+localhost tmp # 
+
+
+
+/etc/fstab Using a UUID for the root partition
+
+# eusb
+cat <<EOF > $td/etc/fstab
+UUID=f606004e-a63b-4ed5-9953-d773ae8ddb69  /            ext4    noatime              0 1
+UUID=97269c3a-d27e-4911-9b51-112c9e1b4ff3  /boot        ext2    defaults,noatime     0 2
+
+tmpfs   /var/tmp/portage        tmpfs   uid=portage,gid=portage,mode=775,noatime    0 0
+tmpfs   /tmp         tmpfs   mode=775,noatime          0  0
+
+EOF
+
+
+
+# yusb
+cat <<EOF > $td/etc/fstab
+UUID=23bd3386-a0b1-4f61-869e-6f7a06aff470  /            ext4    noatime              0 1
+UUID=e5fa3175-0f37-4865-a24e-05898e3ac595  /boot        ext2    defaults,noatime     0 2
+
+tmpfs   /var/tmp/portage        tmpfs   uid=portage,gid=portage,mode=775,noatime    0 0
+tmpfs   /tmp         tmpfs   mode=775,noatime          0  0
+
+EOF
+
+cat $td/etc/fstab
+
+https://wiki.gentoo.org/wiki/Fstab
+
+
+
+thedir=$td
+
+mount -t proc proc  ${thedir}/proc
+mount --rbind /sys  ${thedir}/sys
+mount --make-rslave ${thedir}/sys
+mount --rbind /dev  ${thedir}/dev
+mount --make-rslave ${thedir}/dev
+
+chroot ${thedir} /bin/bash
+source /etc/profile
+export PS1="(chroot) $PS1"
+
+
+grub-install /dev/sdd
+
+
+
+mount -o size=90%,noatime,nodiratime -t tmpfs tmpfs /tmp
+
+mkdir /var/tmp/portage
+
+mount -o size=90%,noatime,nodiratime,uid=portage,gid=portage,mode=775 -t tmpfs tmpfs /var/tmp/portage 
+
+
+exit
+cd
+
+umount -l ${thedir}/dev{/shm,/pts,}
+umount -l ${thedir}{/sys,/proc}
+
+
+qemu-system-x86_64 -m 1G -drive file=/dev/sdd
+
+qemu-system-x86_64 -m 1G -drive file=/dev/sdb
+
+
+** 96
+
+white y usb 8 G
+
+| partition | mib      |   G | name | mount point |
+|-----------+----------+-----+------+-------------|
+|         1 | 1 3      |     | grub |             |
+|           |          |     |      |             |
+|         2 | 3 131    | 0.1 | boot | /mnt/sdd2   |
+|           |          |     |      |             |
+|         3 | 131 3000 | 2.8 | fs1  | /mnt/sdd3   |
+|           |          |     |      |             |
+|         3 | 131 6000 | 5.7 |      |             |
+|           |          |     |      |             |
+|           |          |     |      |             |
+|         4 | 3000 -1  | 4.5 | fs2  | /mnt/sdd4   |
+|           |          |     |      |             |
+|         4 | 6000 -1  | 9.3 |      |             |
+|           |          |     |      |             |
+
+
+parted -a optimal /dev/sdd
+
+
+(parted)
+
+mklabel gpt
+
+unit mib
+
+mkpart primary 1 3
+
+name 1 grub
+
+set 1 bios_grub on
+
+print
+
+mkpart primary 3 131
+
+name 2 boot
+
+mkpart primary 131 3000
+
+mkpart primary 131 6000
+
+name 3 fs1
+
+mkpart primary 3000 -1 
+
+mkpart primary 6000 -1 
+
+
+
+name 4 fs2
+
+quit
+
+
+mkfs.ext2 -T small /dev/sdd2
+
+mkfs.ext4 -j -T small /dev/sdd3
+
+mkfs.ext4 -j -T small /dev/sdd4
+
+
+
+
+
+
+
+
+
+** 44
+
+Bus options 
+ [*] PCI support  
+
+[*] Enable the block layer  ---> 
+
+Device Drivers > SCSI device support 
+ [*] SCSI device support 
+
+ [*] Serial ATA and Parallel ATA drivers (libata) 
+  [*]       Intel ESB, ICH, PIIX3, PIIX4 PATA/SATA support 
+
+Device Drivers > USB support
+ [*]   Support for Host-side USB  
+
+ [*]     xHCI HCD (USB 3.0) support 
+ [*]     EHCI HCD (USB 2.0) support 
+ [*]     OHCI HCD (USB 1.1) support  
+ [*]     USB Mass Storage support
+
+
+Processor type and features 
+[*] Symmetric multi-processing support
+(4) Maximum number of CPUs 
+[ ] SMT (Hyperthreading) scheduler support (NEW) 
+[*] Multi-core scheduler support (NEW)
+
+[*] Enable loadable module support
+
+File systems 
+<*> Second extended fs support
+
+ <*> The Extended 3 (ext3) filesystem
+ <M> Btrfs filesystem support       
+ DOS/FAT/NT Filesystems
+ <M> MSDOS fs support 
+ <M> NTFS file system support  
+
+[*] Networking support  ---> 
+ Networking options
+ [*] TCP/IP networking
+
+Device Drivers
+ [*] Network device support  ---> 
+Ethernet driver support
+[*]   Realtek devices
+<M>     Realtek 8169 gigabit ethernet support # M4A87TD/USB
+
+[*]   Atheros devices  
+<M>     Atheros L1C Gigabit Ethernet support  # h77md3h 
+ 
+Networking support > Wireless
+<*>   cfg80211 - wireless configuration API 
+<M>   Generic IEEE 802.11 Networking Stack (mac80211) 
+
+
+Device Drivers > Network device support > Wireless LAN 
+[*]   Intersil devices (NEW)  
+ <M>     Softmac Prism54 support 
+  <M>       Prism54 USB support 
+
+https://wiki.gentoo.org/wiki/Kernel/Gentoo_Kernel_Configuration_Guide#Kernel_features
+
+
+ lspci -k 
+
+01:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. RTL8111/8168/8411 PCI Express Gigabit Ethernet Controller (rev 06)
+        Subsystem: ASUSTeK Computer Inc. P8P67 and other motherboards
+        Kernel driver in use: r8169
+        Kernel modules: r8169
+0
+
+
+** 42
+
+[*] 64-bit kernel
+
+-> General setup
+  -> Configure standard kernel features
+[*] Enable support for printk
+
+-> General setup
+[*] Initial RAM filesystem and RAM disk (initramfs/initrd) support
+
+-> Executable file formats / Emulations
+[*] Kernel support for ELF binaries
+[*] Kernel support for scripts starting with #!
+
+-> Device Drivers
+  -> Character devices
+[*] Enable TTY
+
+-> Device Drivers
+  -> Character devices
+    -> Serial drivers
+[*] 8250/16550 and compatible serial support
+[*]   Console on 8250/16550 and compatible serial port
+
+-> File systems
+  -> Pseudo filesystems
+[*] /proc file system support
+[*] sysfs file system support
+
+
+
+http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2015-edition.html
+
+
+
+** 30 
+
+# path of make.conf
+pm="$wy/etc/portage/make.conf"
+
+cat $pm
+
+cat <<EOF >> $pm
+
+MAKEOPTS="-j5"
+PORTAGE_NICENESS=10
+
+GENTOO_MIRRORS="http://ftp.twaren.net/Linux/Gentoo/ http://ftp.jaist.ac.jp/pub/Linux/Gentoo/ http://ftp.iij.ad.jp/pub/linux/gentoo/"
+
+INPUT_DEVICES="evdev"
+
+VIDEO_CARDS="nouveau intel i915"
+# VIDEO_CARDS="nouveau"
+
+PAX_MARKINGS="XT" 
+
+EOF
+
+
+# USE="xattr bindist udev"  # modify the USE flag
+
+sed -i 's/USE=\".*$/USE=\"xattr bindist udev\"/' $pm
+
+sed  '' $pm
+
+
+
+** 24
+
+#
+
+rm -rf $wy
+
+mkdir $wy
+
+
+ls -lha /tmp/st*
+
+/tmp/stage4_20170706_tiny.tar.xz
+
+s="/tmp/stage4_20170706_tiny.tar.xz"
+
+
+time nice -10 \
+tar xvpf \
+$s \
+-C /tmp/wy \
+--xattrs
+
+[2017-07-11 Tue 11:38]
+
+real    0m33.143s
+user    0m33.060s
+sys     0m7.065s
+
+
+du -hd1 $wy | sort -rh
+
+
+[2017-07-11 Tue 11:39]
+
+2.6G    /tmp/wy
+2.5G    /tmp/wy/usr
+37M     /tmp/wy/var
+17M     /tmp/wy/lib64
+9.7M    /tmp/wy/etc
+9.0M    /tmp/wy/bin
+6.2M    /tmp/wy/sbin
+3.1M    /tmp/wy/lib32
+1.5M    /tmp/wy/boot
+12K     /tmp/wy/home
+4.0K    /tmp/wy/root
+
+
+** 92
+
+
+inside the chroot
+
+cat <<EOF >  /tmp/stage4.excl
+.bash_history
+/mnt/*
+/tmp/*
+/proc/*
+/sys/*
+/dev/*
+EOF
+
+cat /tmp/stage4.excl
+
+time nice -10 \
+tar -X /tmp/stage4.excl -c / | xz -7vT0  > /tmp/stage4_20170711_fs_netcard.tar.xz
+ 100 %      445.8 MiB / 2282.3 MiB = 0.195   7.1 MiB/s       5:19             
+
+
+
+
+ 100 %      547.0 MiB / 2277.8 MiB = 0.240    28 MiB/s       1:21        
+
+
+time nice -10 \
+tar -X /tmp/stage4.excl -c / | xz -1vT0  > /tmp/stage4_20170706_tiny.tar.xz
+
+100 %      518.5 MiB / 2172.1 MiB = 0.239    28 MiB/s       1:17   
+
+
 * packages
 
 
@@ -127,9 +722,10 @@ File systems > Pseudo filesystems
 General setup 
  [*] Use full shmem filesystem 
 
-
-[*] Tmpfs virtual memory file system support (former shm fs)
-[*]   Tmpfs extended attributes
+File systems > Pseudo filesystems
+[*] Tmpfs virtual memory file system support (former shm fs)   
+ [*]   Tmpfs POSIX Access Control Lists
+ -*-   Tmpfs extended attributes                                                                                │ │  
 
 File systems 
  [*] Enable POSIX file locking API   
@@ -744,21 +1340,26 @@ mkpart primary 3 131
 
 name 2 boot
 
-mkpart primary 131 3000
 
-mkpart primary 131 6000
+# yusb 8g
+mkpart primary 131 3000    
+
+# 16g
+mkpart primary 131 6000    
 
 name 3 fs1
 
-mkpart primary 3000 -1 
 
-mkpart primary 6000 -1 
+# yusb 8g
+mkpart primary 3000 -1     
 
-
+# 16g
+mkpart primary 6000 -1     
 
 name 4 fs2
 
 quit
+
 
 
 mkfs.ext2 -T small /dev/sdd2
@@ -1436,12 +2037,132 @@ EOF
 cat /tmp/stage4.excl
 
 time nice -10 \
-tar -X /tmp/stage4.excl -c / | xz -1vT0  > /tmp/stage4_20170706_fs_netcard.tar.xz
+tar -X /tmp/stage4.excl -c / | xz -7vT0  > /tmp/stage4_20170711_fs_netcard.tar.xz
 
- 100 %      547.0 MiB / 2277.8 MiB = 0.240    28 MiB/s       1:21        
+100 %      445.8 MiB / 2282.3 MiB = 0.195   7.1 MiB/s       5:19             
 
+
+* extract to usb
+
+# working direcxtory
+wy="/tmp/wy"
+
+# transplantation directory
+td="/tmp/gentoo"
+
+** 40 grub
+
+grub-install /dev/sdd
+
+# add rootwait
+sed -i 's/#GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="rootwait"/' /etc/default/grub 
+
+cat /etc/default/grub | grep GRUB_CMDLINE_LINUX_DEFAULT
+
+# update grub.cfg
+/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
+
+
+
+** 30 fstab 
+
+
+
+# yusb, after chroot
+
+blkid | grep sdd
+
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd2: UUID="665e3ee0-35f5-426d-84b5-3b6932a7e0ed" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+/dev/sdd4: UUID="e9b963a4-a54b-4fe0-8efc-1160134e3a19" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+
+
+cat <<EOF > /etc/fstab
+UUID=e9b963a4-a54b-4fe0-8efc-1160134e3a19  /            ext4    noatime              0 1
+
+UUID=665e3ee0-35f5-426d-84b5-3b6932a7e0ed  /boot        ext2    defaults,noatime     0 2
+
+tmpfs   /var/tmp/portage        tmpfs   uid=portage,gid=portage,mode=775,noatime    0 0
+tmpfs   /tmp         tmpfs   mode=775,noatime          0  0
+
+EOF
+
+cat /etc/fstab
+
+
+** 20 mount extract chroot qemu
+
+# transplantation directory
+td="/tmp/gentoo"
+
+mkdir $td
+
+mount /dev/sdd4 $td
+
+# mkdir $td/boot
+
+mkdir $td/boot
+
+mount /dev/sdd2 $td/boot
+
+
+
+# extract xz
+
+ls -lha $wy/tmp/*
+
+s="/tmp/wy/tmp/stage4_20170711_fs_netcard.tar.xz"
 
 time nice -10 \
-tar -X /tmp/stage4.excl -c / | xz -1vT0  > /tmp/stage4_20170706_tiny.tar.xz
+tar xvpf \
+$s \
+-C $td \
+--xattrs
 
- 100 %      518.5 MiB / 2172.1 MiB = 0.239    28 MiB/s       1:17   
+
+yusb [2017-07-11 Tue 15:30]
+
+real    4m13.825s
+user    0m30.163s
+sys     0m11.327s
+
+
+thedir=$td
+
+mount -t proc proc  ${thedir}/proc
+mount --rbind /sys  ${thedir}/sys
+mount --make-rslave ${thedir}/sys
+mount --rbind /dev  ${thedir}/dev
+mount --make-rslave ${thedir}/dev
+
+chroot ${thedir} /bin/bash
+source /etc/profile
+export PS1="(chroot) $PS1"
+
+
+mount -o size=90%,noatime,nodiratime -t tmpfs tmpfs /tmp
+
+mkdir /var/tmp/portage
+
+mount -o size=90%,noatime,nodiratime,uid=portage,gid=portage,mode=775 -t tmpfs tmpfs /var/tmp/portage 
+
+
+exit
+cd
+
+umount -l ${thedir}/dev{/shm,/pts,}
+umount -l ${thedir}{/sys,/proc}
+
+umount /dev/sdd2
+
+umount /dev/sdd4 -l
+
+
+
+
+
+
+
+
+

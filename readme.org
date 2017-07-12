@@ -4789,6 +4789,10 @@ emerge -pv sys-kernel/linux-firmware
 proxychains -f /root/proxychains.conf \
 emerge sys-kernel/linux-firmware
 
+proxychains -f /root/proxychains.conf \
+emerge --ask --changed-use --deep @world
+
+
 
 emerge -pv x11-base/xorg-server
 

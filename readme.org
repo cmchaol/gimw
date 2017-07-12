@@ -1,32 +1,378 @@
 * scenarios
 
+** extract to usb and test
+
+|    |                   |
+| 10 | format usb        |
+|    |                   |
+| 16 | mount             |
+|    |                   |
+| 20 | extraction to usb |
+|    |                   |
+| 30 | fstab             |
+|    |                   |
+| 40 | chroot            |
+|    |                   |
+| 50 | grub              |
+|    |                   |
+| 80 | qemu              |
+
+# working direcxtory
+w="/tmp/gentoo"
+
+mkdir $w
+
+*** 30
+
+# in host, not in chroot
+
+[2017-07-12 Wed 11:46]
+
+blkid | grep sdd
+/dev/sdd2: UUID="ffc4ca06-da75-4232-87c6-a316e58c0dbb" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="17e6765b-f940-4d6a-9d37-821432cd735f" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=17e6765b-f940-4d6a-9d37-821432cd735f  /            ext4    noatime              0 1
+UUID=ffc4ca06-da75-4232-87c6-a316e58c0dbb  /boot        ext2    defaults,noatime     0 2
+
+tmpfs   /var/tmp/portage        tmpfs   uid=portage,gid=portage,mode=775,noatime    0 0
+tmpfs   /tmp         tmpfs   mode=775,noatime          0  0
+
+EOF
+
+cat $w/etc/fstab
+
+
+
+
+blkid | grep sdd
+
+/dev/sdd2: UUID="df3ce848-eee5-4105-a7e5-4c8125f2a310" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="c1d58038-a190-4056-ab49-05aa4457173d" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+
+
+
+cat <<EOF > $w/etc/fstab
+UUID=c1d58038-a190-4056-ab49-05aa4457173d  /            ext4    noatime              0 1
+UUID=df3ce848-eee5-4105-a7e5-4c8125f2a310  /boot        ext2    defaults,noatime     0 2
+
+tmpfs   /var/tmp/portage        tmpfs   uid=portage,gid=portage,mode=775,noatime    0 0
+tmpfs   /tmp         tmpfs   mode=775,noatime          0  0
+
+EOF
+
+cat $w/etc/fstab
+
+
+*** 40
+
+thedir=$w
+
+mount -t proc proc  ${thedir}/proc
+mount --rbind /sys  ${thedir}/sys
+mount --make-rslave ${thedir}/sys
+mount --rbind /dev  ${thedir}/dev
+mount --make-rslave ${thedir}/dev
+
+chroot ${thedir} /bin/bash
+source /etc/profile
+export PS1="(chroot) $PS1"
+
+mount -o size=90%,noatime,nodiratime -t tmpfs tmpfs /tmp
+
+mkdir /var/tmp/portage
+
+mount -o size=90%,noatime,nodiratime,uid=portage,gid=portage,mode=775 -t tmpfs tmpfs /var/tmp/portage 
+
+
+exit
+cd
+
+umount -l ${thedir}/dev{/shm,/pts,}
+umount -l ${thedir}{/sys,/proc}
+
+
+umount /dev/sdd2
+
+umount /dev/sdd4 -l
+
+lsblk
+
+
+
+*** 80
+
+qemu-system-x86_64 -m 1G -drive file=/dev/sdd
+
+
+*** 50
+
+grub-install /dev/sdd
+
+
+# add rootwait
+sed -i 's/#GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="rootwait"/' /etc/default/grub 
+
+cat /etc/default/grub | grep GRUB_CMDLINE_LINUX_DEFAULT
+
+# update grub.cfg
+/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
+
+
+
+
+*** 16
+
+echo $w
+
+
+mount /dev/sdd4 $w
+
+mkdir $w/boot
+
+mount /dev/sdd2 $w/boot
+
+
+
+*** 20
+
+ls -lha /tmp/wy/tmp/*.tar.*
+
+# 456M Jul 12 10:28 /tmp/wy/tmp/stage4_20170712_usbboot_netcard.tar.xz
+
+# /tmp/wy/tmp/stage4_20170712_usbboot_netcard-dhcpcd.tar.xz
+# /tmp/wy/tmp/stage4_20170712_usbboot_netcard.tar.xz
+
+
+s="/tmp/wy/tmp/stage4_20170712_usbboot_netcard.tar.xz"
+
+s="/tmp/wy/tmp/stage4_20170712_usbboot_netcard-dhcpcd.tar.xz"
+
+
+time nice -10 \
+tar xvpf \
+$s \
+-C $w \
+--xattrs
+
+[2017-07-12 Wed 11:35]
+
+real    6m18.298s
+user    0m30.202s
+sys     0m11.409s
+
+du -hd1 $w | sort -rh
+
+2.2G    /tmp/gentoo/usr
+2.2G    /tmp/gentoo
+21M     /tmp/gentoo/var
+19M     /tmp/gentoo/lib64
+8.9M    /tmp/gentoo/bin
+8.7M    /tmp/gentoo/etc
+6.3M    /tmp/gentoo/sbin
+4.4M    /tmp/gentoo/boot
+3.1M    /tmp/gentoo/lib32
+12K     /tmp/gentoo/lost+found
+6.0K    /tmp/gentoo/home
+4.0K    /tmp/gentoo/root
+2.0K    /tmp/gentoo/run
+1.0K    /tmp/gentoo/tmp
+1.0K    /tmp/gentoo/sys
+1.0K    /tmp/gentoo/proc
+1.0K    /tmp/gentoo/opt
+1.0K    /tmp/gentoo/mnt
+1.0K    /tmp/gentoo/media
+1.0K    /tmp/gentoo/dev
+
+
+[2017-07-12 Wed 10:50]
+
+real    4m30.005s
+user    0m30.476s
+sys     0m11.249s
+
+du -hd1 $w | sort -rh
+
+2.2G    /tmp/gentoo/usr
+2.2G    /tmp/gentoo
+21M     /tmp/gentoo/var
+19M     /tmp/gentoo/lib64
+8.9M    /tmp/gentoo/bin
+8.7M    /tmp/gentoo/etc
+6.0M    /tmp/gentoo/sbin
+4.4M    /tmp/gentoo/boot
+3.1M    /tmp/gentoo/lib32
+12K     /tmp/gentoo/lost+found
+6.0K    /tmp/gentoo/home
+4.0K    /tmp/gentoo/root
+2.0K    /tmp/gentoo/run
+1.0K    /tmp/gentoo/tmp
+1.0K    /tmp/gentoo/sys
+1.0K    /tmp/gentoo/proc
+1.0K    /tmp/gentoo/opt
+1.0K    /tmp/gentoo/mnt
+1.0K    /tmp/gentoo/media
+1.0K    /tmp/gentoo/dev
+
+
+
+*** 10
+
+
+# boot
+mkfs.ext2 -T small /dev/sdd2
+
+# fs1 2.8g
+# mkfs.ext4 -j -T small /dev/sdd3
+
+# root 4.5g
+mkfs.ext4 -j -T small /dev/sdd4
+
+
+
 ** build tiny kernel
 
-|    | download stage3       |
-|    |                       |
-|    | download portage      |
-|    |                       |
-| 20 | tar extraction        |
-|    |                       |
-| 30 | make.conf             |
-|    |                       |
-| 40 | chroot                |
-|    |                       |
-| 50 | profile, zone, locale |
-|    |                       |
-| 60 | proxychains, grub     |
-|    |                       |
-| 70 | passwd, user          |
-|    |                       |
-|    |                       |
-| 90 |                       |
+|    |                           | [2017-07-12 Wed 07:55] |
+|----+---------------------------+------------------------|
+|    | download stage3           |                        |
+|    |                           |                        |
+|    | download portage          |                        |
+|    |                           |                        |
+| 20 | tar extraction            | v                      |
+|    |                           |                        |
+| 30 | make.conf                 |                        |
+|    |                           |                        |
+| 40 | chroot                    | v                      |
+|    |                           |                        |
+| 50 | profile, zone, locale     |                        |
+|    |                           |                        |
+| 60 | proxychains, grub         |                        |
+|    |                           |                        |
+| 70 | passwd, user              |                        |
+|    |                           |                        |
+| 80 | kernel emerge             | v                      |
+|    |                           |                        |
+| 82 | kernel configuration      |                        |
+|    |                           |                        |
+| 84 | Networking netifrc dhcpcd |                        |
+|    |                           |                        |
+| 86 | clock                     |                        |
+|    |                           |                        |
+| 90 | tar compression           |                        |
+|    |                           |                        |
+| 92 | archive                   |                        |
 
 # working direcxtory
 w="/tmp/wy"
 
 mkdir $w
 
-*** tar compression
+*** 84
+
+https://wiki.gentoo.org/wiki/Handbook:AMD64/Installation/System
+
+cat <<EOF >  /etc/conf.d/net
+
+dns_domain_lo="my_domain"
+
+config_enp1s0="dhcp"
+
+EOF
+
+cat /etc/conf.d/net
+
+proxychains -f /root/proxychains.conf emerge --noreplace net-misc/netifrc
+
+proxychains -f /root/proxychains.conf emerge  net-misc/dhcpcd
+
+
+
+cd /etc/init.d
+ln -s net.lo net.enp1s0
+rc-update add net.enp1s0 default
+
+
+*** 86 
+
+cat  /etc/conf.d/hwclock
+
+sed -i 's/clock="UTC"/clock="local"/' /etc/conf.d/hwclock
+
+sed  ''  /etc/conf.d/hwclock
+
+
+
+
+
+
+*** 82
+
+cd /usr/src/linux
+
+make allnoconfig
+
+make menuconfig
+
+time nice -10 \
+make -j 6 && make modules_install
+
+
+
+KERNELVER=4.8.17-hardened-r2-netcard-usbboot
+
+EXTENSION=20170712
+
+cp .config /boot/config-${KERNELVER}-${EXTENSION}
+cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
+cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
+cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
+
+/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
+
+
+cat /etc/portage/make.conf
+
+USE="udev"
+
+
+proxychains -f /root/proxychains.conf \
+emerge --ask --changed-use --deep @world
+
+rc-update add udev sysinit
+
+
+
+
+|                                 | [2017-07-12 Wed 09:54] |
+|                                 |                        |
+|---------------------------------+------------------------|
+| * scenarios                     |                        |
+|                                 |                        |
+| ** kernal configuration         |                        |
+|                                 |                        |
+| Smallest Kernel Config          | v                      |
+|                                 |                        |
+| epoll                           | v                      |
+|                                 |                        |
+| Packet socket                   | v                      |
+|                                 |                        |
+| usb boot udev                   | v                      |
+|                                 |                        |
+| cpu, shmem, tmpfs, file locking | v                      |
+|                                 |                        |
+| netcard                         | v                      |
+|                                 |                        |
+|                                 |                        |
+
+
+*** 90
 
 inside the chroot
 
@@ -42,7 +388,25 @@ EOF
 cat /tmp/stage4.excl
 
 time nice -10 \
-tar -X /tmp/stage4.excl -c / | xz -7vT0  > /tmp/stage4_20170711_tiny.tar.xz
+tar -X /tmp/stage4.excl -c / | xz -7vT4  > /tmp/stage4_20170712_usbboot_netcard-dhcpcd.tar.xz
+
+[2017-07-12 Wed 11:25]
+
+100 %     446.3 MiB / 2,280.0 MiB = 0.196   7.0 MiB/s       5:25             
+
+real    5m25.823s
+user    20m34.479s
+sys     0m5.138s
+
+
+
+[2017-07-12 Wed 10:23]
+100 %     455.9 MiB / 2,279.3 MiB = 0.200   7.7 MiB/s       4:56             
+
+real    4m56.082s
+user    18m48.329s
+sys     0m4.930s
+
 
 [2017-07-11 Tue 17:51]
 100 %     238.2 MiB / 1,342.0 MiB = 0.177   7.0 MiB/s       3:11             
@@ -100,8 +464,10 @@ ls -lha /tmp/*.tar.*
 -rw-r--r-- 1 root root  63M Jul 11 08:51 /tmp/portage-latest.tar.xz
 -rw-r--r-- 1 root root 226M Jul  7 20:06 /tmp/stage3-amd64-hardened-20170706.tar.bz2
 
+/tmp/stage4_20170711_tiny.tar.xz
 
-s="/tmp/stage3-amd64-hardened-20170706.tar.bz2"
+
+s="/tmp/stage4_20170711_tiny.tar.xz"
 
 
 time nice -10 \
@@ -109,6 +475,27 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+[2017-07-12 Wed 07:54]
+
+real    0m20.298s
+user    0m20.342s
+sys     0m4.896s
+
+du -hd1 $w | sort -rh
+1.7G    /tmp/wy/usr
+1.7G    /tmp/wy
+30M     /tmp/wy/var
+17M     /tmp/wy/lib64
+9.7M    /tmp/wy/etc
+9.0M    /tmp/wy/bin
+6.2M    /tmp/wy/sbin
+3.1M    /tmp/wy/lib32
+12K     /tmp/wy/home
+4.0K    /tmp/wy/root
+
+
+
 
 [2017-07-11 Tue 17:13]
 
@@ -255,6 +642,21 @@ passwd user1
 
 
 
+*** 80
+
+echo "sys-kernel/hardened-sources symlink" >> /etc/portage/package.use/hardened-sources
+
+cat /etc/portage/package.use/hardened-sources
+
+proxychains -f /root/proxychains.conf \
+emerge sys-kernel/hardened-sources 
+
+tail -f $w/var/log/emerge-fetch.log
+
+
+
+
+
 ** packages
 
 *** proxychains
@@ -375,6 +777,8 @@ https://forums.gentoo.org/viewtopic-p-4995041.html?sid=d3a628503943a14f8f7b2e815
 
 *** netcard
 
+[*] Enable loadable module suppor
+
 [*] Networking support  ---> 
  Networking options
  [*] TCP/IP networking
@@ -440,7 +844,7 @@ File systems > Pseudo filesystems
  -*-   Tmpfs extended attributes                                                                                │ │  
 
 File systems 
- [*] Enable POSIX file locking API   
+ [*] Enable POSIX file locking API    flock() 
 
 
 
@@ -467,9 +871,7 @@ http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2
   -> Character devices
 [*] Enable TTY
 
--> Device Drivers
-  -> Character devices
-    -> Serial drivers
+  -> Serial drivers
 [*] 8250/16550 and compatible serial support
 [*]   Console on 8250/16550 and compatible serial port
 
@@ -485,7 +887,7 @@ http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2
 
 
 
-*** usb boot
+*** usb boot udev
 
 | MULTIUSER                  |
 |                            |
@@ -572,13 +974,6 @@ Device Drivers > SCSI device support
   [*]   AHCI SATA support                                                                                        │ │  
   [*]   Platform AHCI SATA support  
 
-Device Drivers > USB support
- [*]   Support for Host-side USB  
-
- [*]     xHCI HCD (USB 3.0) support 
- [*]     EHCI HCD (USB 2.0) support 
- [*]     OHCI HCD (USB 1.1) support  
- [*]     USB Mass Storage support
 
 Symbol: ATA_PIIX [=y]                                                                                                                                      │  
 
@@ -591,19 +986,17 @@ Symbol: ATA_PIIX [=y]                                                           
   │ (1)       -> ATA BMDMA support (ATA_BMDMA [=y])                                                                                                            │  
   │   Defined at drivers/ata/Kconfig:260                                                                                                                       │  
   │   Depends on: ATA [=y] && ATA_SFF [=y] && ATA_BMDMA [=y] && PCI [=y]                                                                                       │  
+
+
+Device Drivers > USB support
+ [*]   Support for Host-side USB  
+
+ [*]     xHCI HCD (USB 3.0) support 
+ [*]     EHCI HCD (USB 2.0) support 
+ [*]     OHCI HCD (USB 1.1) support  
+ [*]     USB Mass Storage support
  
 
-time nice -10 \
-make && make modules_install
-
-
-
-
-
-
-
-
- 
 
 ** kernel compile, make, cp, qemu
 
@@ -628,6 +1021,15 @@ cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
 /usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
 
 qemu-system-x86_64 -m 1G -drive file=/dev/sdd
+
+
+echo "sys-kernel/hardened-sources symlink" >> /etc/portage/package.use/hardened-sources
+
+cat /etc/portage/package.use/hardened-sources
+
+emerge sys-kernel/hardened-sources 
+
+tail -f /tmp/wy/var/log/emerge-fetch.log
 
 
 ** chroot

@@ -3832,7 +3832,7 @@ make -j 6 && make modules_install
 KERNELVER=4.8.17-hardened-r2-netcard-usbboot
 
 
-KERNELVER=4.8.17-hardened-r2-netcard-usbboot-futex-x11
+KERNELVER=4.8.17-hardened-r2-netcard-usbboot-futex-x11-module
 
 EXTENSION=20170712
 
@@ -4050,6 +4050,12 @@ umount /dev/sdd2
 
 umount /dev/sdd4 -l
 
+
+
+umount /dev/sdb2
+
+umount /dev/sdb4 -l
+
 lsblk
 
 
@@ -4057,6 +4063,8 @@ lsblk
 *** 80
 
 qemu-system-x86_64 -m 1G -drive file=/dev/sdd
+
+qemu-system-x86_64 -m 1G -drive file=/dev/sdb
 
 
 *** 50
@@ -4079,12 +4087,20 @@ cat /etc/default/grub | grep GRUB_CMDLINE_LINUX_DEFAULT
 
 echo $w
 
-
+# sdd
 mount /dev/sdd4 $w
 
 mkdir $w/boot
 
 mount /dev/sdd2 $w/boot
+
+
+# sdb
+mount /dev/sdb4 $w
+
+mkdir $w/boot
+
+mount /dev/sdb2 $w/boot
 
 
 

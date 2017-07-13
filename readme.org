@@ -3800,6 +3800,9 @@ w="/tmp/wd"
 
 mkdir $w
 
+rm -rf $w
+
+
 *** 62
 
 |                         | [2017-07-12 Wed 09:54] |
@@ -3873,6 +3876,8 @@ cd
 umount -l ${thedir}/dev{/shm,/pts,}
 umount -l ${thedir}{/sys,/proc}
 
+umount -l ${thedir}{/tmp,/var/tmp/portage}
+
 
 umount /dev/sdd2
 
@@ -3893,16 +3898,60 @@ qemu-system-x86_64 -m 1G -drive file=/dev/sdd
 
 ls -lha /tmp/*.tar.*
 
-# /tmp/stage4_20170712_usbboot_netcard-dhcpcd.tar.xz
+#  /tmp/stage4_20170712_usbboot_netcard-dhcpcd.tar.xz
 
 s="/tmp/stage4_20170712_usbboot_netcard-dhcpcd.tar.xz"
-
 
 time nice -10 \
 tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+[2017-07-13 Thu 10:25] # kernel
+
+real    0m29.873s
+user    0m29.594s
+sys     0m7.335s
+
+du -hd1 $w | sort -rh
+
+2.7G    /tmp/wd
+2.6G    /tmp/wd/usr
+37M     /tmp/wd/var
+20M     /tmp/wd/lib64
+9.7M    /tmp/wd/etc
+9.0M    /tmp/wd/bin
+6.5M    /tmp/wd/sbin
+4.4M    /tmp/wd/boot
+3.1M    /tmp/wd/lib32
+12K     /tmp/wd/home
+4.0K    /tmp/wd/root
+
+
+
+[2017-07-13 Thu 10:14] # tiny
+
+real    0m20.221s
+user    0m20.207s
+sys     0m4.901s
+
+du -hd1 $w | sort -rh
+
+1.7G    /tmp/wd/usr
+1.7G    /tmp/wd
+30M     /tmp/wd/var
+17M     /tmp/wd/lib64
+9.7M    /tmp/wd/etc
+9.0M    /tmp/wd/bin
+6.2M    /tmp/wd/sbin
+3.1M    /tmp/wd/lib32
+12K     /tmp/wd/home
+4.0K    /tmp/wd/root
+
+
+
+
 
 [2017-07-12 Wed 14:01]  # tmpfs
 
@@ -4720,6 +4769,179 @@ wget $p4$p3
 
 
 ** kernel configuration
+
+*** miniconfig
+
+Quick and dirty miniconfig howto, with feature suggestions.
+
+https://lwn.net/Articles/160497/
+
+
+
+What exactly does Linux kernel's `make defconfig` do?
+
+https://stackoverflow.com/questions/41885015/what-exactly-does-linux-kernels-make-defconfig-do
+
+
+
+
+*** Configuration Targets
+
+**** savedefconfig
+
+|   |                                                 |   |
+|   | generate the customized .config                 |   |
+|   |                                                 |   |
+|   | make savedefconfig                              |   |
+|   |                                                 |   |
+|   | cp defconfig arch/arm/configs/my_cool_defconfig |   |
+|   |                                                 |   |
+|   |                                                 |   | 
+
+
+
+
+cd /usr/src/linux
+
+make allnoconfig
+
+make menuconfig
+
+Processor type and features > High Memory Support
+ (X) off  
+
+General setup
+[ ] Enable membarrier() system call
+
+
+make savedefconfig 
+
+cp defconfig /usr/src/linux/arch/x86/configs/my_cool_HighMemoryoff
+
+cp defconfig /tmp/my_cool_HighMemoryoff
+
+k="/tmp/my_cool_HighMemoryoff"
+
+echo $k
+
+ls -lha $k
+
+
+
+KCONFIG_ALLCONFIG=$k make allnoconfig
+
+
+make allnoconfig
+
+make /tmp/my_cool_HighMemoryoff
+
+
+make /usr/src/linux/arch/x86/configs/my_cool_HighMemoryoff.conf
+
+make my_cool_HighMemoryoff
+# scripts/kconfig/conf  --silentoldconfig Kconfig
+# make: *** No rule to make target 'my_cool_HighMemoryoff'.  Stop.
+
+https://stackoverflow.com/questions/27899104/creating-defconfig-file-from-config
+
+I think you have to do just one command and use the created file as you want to.
+
+% make savedefconfig 
+% cp defconfig arch/arm/configs/my_cool_defconfig
+To get all possible targets just run
+
+% make help
+
+
+
+**** the default directory and files
+
+ls /usr/src/linux-4.8.17-hardened-r2/arch/x86/configs/ -lha
+
+7.1K Oct  3  2016 i386_defconfig
+ 605 Oct  3  2016 kvm_guest.config
+  80 Oct  3  2016 tiny.config
+7.1K Oct  3  2016 x86_64_defconfig
+ 744 Oct  3  2016 xen.config
+
+
+**** to compare using diffconfig
+
+
+|   |                                        |   |
+|   | copy .config to new location .config.1 |   |
+|   |                                        |   |
+|   | apply targets                          |   |
+|   |                                        |   |
+|   | copy .config to new location .config.2 |   |
+|   |                                        |   |
+|   | compare                                |   |
+|   |                                        |   |
+|   |                                        |   |
+
+
+
+cd /usr/src/linux
+
+
+
+make allnoconfig
+
+cp .config /tmp/.config.allnoconfig
+
+
+make tinyconfig 
+
+cp .config /tmp/.config.tinyconfig
+
+
+make tiny.config 
+
+cp .config /tmp/.config.tiny.config
+
+
+| diffconfig | A        | B        | C        |
+|------------+----------+----------+----------|
+|            | A config | B config | C output |
+|            |          |          |          |
+|            |          |          | B - A    |
+|            |          |          |          |
+
+/usr/src/linux/scripts/diffconfig /tmp/.config.tiny.config /tmp/.config.allnoconfig > /tmp/tiny
+
+/usr/src/linux/scripts/diffconfig  /tmp/.config.allnoconfig /tmp/.config.tiny.config > /tmp/rtiny
+
+/usr/src/linux/scripts/diffconfig  /tmp/.config.allnoconfig /tmp/.config.tinyconfig > /tmp/tinyconfig
+
+cat /tmp/tiny
+
+.config.working .config.default > .config.diff
+
+
+https://tiny.wiki.kernel.org/
+
+Building a tiny kernel
+
+
+
+
+Comparing current kernel configuration with default configuration
+
+https://wiki.gentoo.org/wiki/Kernel/Configuration#Comparing_current_kernel_configuration_with_default_configuration
+
+
+
+
+
+
+http://www.linuxtopia.org/online_books/linux_kernel/kernel_configuration/ch11s03.html
+
+
+Kernel build command line reference: Chapter 10 - Linux Kernel in a Nutshell
+
+http://archive.oreilly.com/pub/a/linux/excerpts/9780596100797/kernel-build-command-line-reference.html
+
+
 
 *** futex
 

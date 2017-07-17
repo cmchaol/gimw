@@ -23,6 +23,17 @@
 |                                 |                          |
 
 
+f="https://raw.githubusercontent.com/cmchaol/gimw/master/my-kernel-defconfig/d-20170717-1340"
+
+
+proxychains -f /root/proxychains.conf \
+wget $f
+
+
+make KCONFIG_ALLCONFIG=$f alldefconfig
+
+
+
 
 | aims                        | commands                               |
 |-----------------------------+----------------------------------------|
@@ -4051,6 +4062,10 @@ mkdir /var/tmp/portage
 mount -o size=90%,noatime,nodiratime,uid=portage,gid=portage,mode=775 -t tmpfs tmpfs /var/tmp/portage 
 
 
+
+
+
+
 exit
 cd
 
@@ -4083,9 +4098,9 @@ make -j 6 && make modules_install
 KERNELVER=4.8.17-hardened-r2-netcard-usbboot
 
 
-KERNELVER=4.8.17-hardened-r2-netcard-usbboot-futex-x11-module
+KERNELVER=4.8.17-hardened-r2-x11
 
-EXTENSION=20170712
+EXTENSION=20170717
 
 cp .config /boot/config-${KERNELVER}-${EXTENSION}
 cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
@@ -5164,16 +5179,27 @@ https://forums.gentoo.org/viewtopic-p-6655021.html
 
 
 
+pm="$wy/etc/portage/make.conf"
+
+cat $pm
+
+sed -i 's/nouveau/nvidia/g' $pm
+
+
+
+
+
+
 emerge -pv xorg-drivers 
 
 proxychains -f /root/proxychains.conf \
 emerge xorg-drivers 
 
 
-emerge -pv sys-kernel/linux-firmware
+# emerge -pv sys-kernel/linux-firmware
 
-proxychains -f /root/proxychains.conf \
-emerge sys-kernel/linux-firmware
+# proxychains -f /root/proxychains.conf \
+# emerge sys-kernel/linux-firmware
 
 proxychains -f /root/proxychains.conf \
 emerge --ask --changed-use --deep @world
@@ -5225,6 +5251,7 @@ emerge spectrwm
 
 emerge -pv x11-drivers/nvidia-drivers
 
+proxychains -f /root/proxychains.conf \
 emerge x11-drivers/nvidia-drivers  --autounmask-write
 
 dispatch-conf
@@ -5240,7 +5267,7 @@ emerge x11-drivers/nvidia-drivers
  * 
  * To use the NVIDIA CUDA/OpenCL, run "eselect opencl set nvidia"
 
-
+proxychains -f /root/proxychains.conf \
 emerge @module-rebuild
 
 
@@ -5644,6 +5671,12 @@ EOF
 cat /tmp/stage4.excl
 
 time nice -10 \
+tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170717_nvidia.tar.xz
+
+
+
+
+time nice -10 \
 tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170712_netcard_x11_futex.tar.xz
 
 100 %     639.6 MiB / 2,806.9 MiB = 0.228   5.7 MiB/s       8:13             
@@ -5882,6 +5915,8 @@ File systems  --->
         [*] sysfs file system support
 
 nano /etc/portage/make.conf
+
+cat /etc/portage/make.conf
 
 USE="udev"
 

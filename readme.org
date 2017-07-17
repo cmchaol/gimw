@@ -5672,6 +5672,11 @@ cat /tmp/stage4.excl
 
 time nice -10 \
 tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170717_nvidia.tar.xz
+  100 %     818.8 MiB / 3,159.0 MiB = 0.259   5.6 MiB/s       9:21             
+
+real    9m22.081s
+user    34m31.434s
+sys     0m7.973s
 
 
 

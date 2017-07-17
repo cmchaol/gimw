@@ -1,5 +1,196 @@
 * scenarios
 
+** savedefconfig alldefconfig
+
+
+
+
+
+*** my config
+
+| Smallest Kernel Config          | f="/tmp/d-20170717-1300" |
+|                                 |                          |
+| usb boot udev                   | f="/tmp/d-20170717-1320" |
+|                                 |                          |
+| futex epoll pocket socket       | f="/tmp/d-20170717-1325" |
+|                                 |                          |
+| cpu, shmem, tmpfs, file locking | f="/tmp/d-20170717-1330" |
+|                                 |                          |
+| netcards                        | f="/tmp/d-20170717-1335" |
+|                                 |                          |
+| x11                             | f="/tmp/d-20170717-1340" |
+|                                 |                          |
+|                                 |                          |
+
+
+
+| aims                        | commands                               |
+|-----------------------------+----------------------------------------|
+| create a customized .config |                                        |
+|                             | make allnoconfig                       |
+|                             |                                        |
+|                             | make menuconfig                        |
+|                             |                                        |
+|-----------------------------+----------------------------------------|
+| make savedefconfig          |                                        |
+|                             | f="/tmp/                               |
+|                             |                                        |
+|                             | make savedefconfig                     |
+|                             |                                        |
+|                             | cp defconfig $f                        |
+|-----------------------------+----------------------------------------|
+| restore                     |                                        |
+|                             | make KCONFIG_ALLCONFIG=$f alldefconfig |
+
+
+cd /usr/src/linux
+
+make allnoconfig
+
+make menuconfig 
+
+make savedefconfig
+
+
+cp defconfig $f
+
+echo $f
+
+cat $f
+
+# make $f  # fails to restore, scripts/kconfig/conf  --silentoldconfig Kconfig
+
+make KCONFIG_ALLCONFIG=$f alldefconfig
+
+# make KCONFIG_ALLCONFIG=$f allnoconfig
+
+
+|                  | output           |
+|------------------+------------------|
+| make $f          | silentoldconfig  |
+|                  |                  |
+| make allnoconfig | allnoconfig      |
+|                  |                  |
+| make defconfig   | x86_64_defconfig |
+
+
+
+
+*** proof of concept 20, restore savedefconfig
+
+| aims                        | commands                               |
+|-----------------------------+----------------------------------------|
+| create a customized .config |                                        |
+|                             | make allnoconfig                       |
+|                             |                                        |
+|                             | make menuconfig                        |
+|                             |                                        |
+|-----------------------------+----------------------------------------|
+| make savedefconfig          |                                        |
+|                             | f="/tmp/d-20170717-1020"               |
+|                             |                                        |
+|                             | cp defconfig $f                        |
+|-----------------------------+----------------------------------------|
+| restore                     |                                        |
+|                             | make KCONFIG_ALLCONFIG=$f alldefconfig |
+
+
+cd /usr/src/linux
+
+make allnoconfig
+
+make menuconfig 
+
+make savedefconfig
+
+
+f="/tmp/d-20170717-1020"
+
+cp defconfig $f
+
+# make $f  # fails to restore, scripts/kconfig/conf  --silentoldconfig Kconfig
+
+make KCONFIG_ALLCONFIG=$f alldefconfig
+
+
+|                  | output           |
+|------------------+------------------|
+| make $f          | silentoldconfig  |
+|                  |                  |
+| make allnoconfig | allnoconfig      |
+|                  |                  |
+| make defconfig   | x86_64_defconfig |
+
+
+
+*** proof of concept 10, under make savedefconfig, alldefconfig is the target to be compared
+
+|                                   |
+| make alldefconfig                 |
+|                                   |
+| make savedefconfig                |
+|                                   |
+| validate size of defconfig # 0    |
+|                                   |
+|-----------------------------------|
+| make allnoconfig                  |
+|                                   |
+| make savedefconfig                |
+|                                   |
+| validate size of defconfig # 2.5K |
+|                                   |
+| make defconfig                    |
+|                                   |
+|-----------------------------------|
+| # restore from defconfig          |
+|                                   |
+| make allnoconfig                  |
+|                                   |
+| make menuconfig                   |
+|                                   |
+| make savedefconfig                |
+|                                   |
+| make defconfig                    |
+
+
+cd /usr/src/linux
+
+make allnoconfig
+
+make savedefconfig
+
+
+
+ls -lha def*
+
+
+
+
+*** I think, therefore I am
+
+http://lukeluo.blogspot.tw/2014/02/
+
+make savedefconfig
+
+A "defconfig" file will be generated in current dir. It only records the different options comparing to "alldefconfig" file. For example:
+
+
+cd /usr/src/linux
+
+
+make alldefconfig
+make savedefconfig
+
+
+make allnoconfig
+make savedefconfig
+
+
+make menuconfig
+
+
+
+
 ** packages from practice
 
 --autounmask-write
@@ -3800,51 +3991,41 @@ w="/tmp/wd"
 
 mkdir $w
 
-rm -rf $w
+# rm -rf $w
 
+*** 20
 
-*** 62
+s=$( ls /tmp/*.tar.* )
 
-|                         | [2017-07-12 Wed 09:54] |
-|                         |                        |
-|-------------------------+------------------------|
-| * scenarios             |                        |
-|                         |                        |
-| ** kernal configuration |                        |
-|                         |                        |
-| x11                     | v                      |
-|                         |                        |
-| futex                   | v                      |
-|                         |                        |
-|                         |                        |
+echo $s
 
-
-*** 60
-
-cd /usr/src/linux
-
-make allnoconfig
-
-make menuconfig
 
 time nice -10 \
-make -j 6 && make modules_install
+tar xvpf \
+$s \
+-C $w \
+--xattrs
 
 
+[2017-07-13 Thu 10:25] # kernel
 
-KERNELVER=4.8.17-hardened-r2-netcard-usbboot
+real    0m29.873s
+user    0m29.594s
+sys     0m7.335s
 
+du -hd1 $w | sort -rh
 
-KERNELVER=4.8.17-hardened-r2-netcard-usbboot-futex-x11-module
-
-EXTENSION=20170712
-
-cp .config /boot/config-${KERNELVER}-${EXTENSION}
-cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
-cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
-cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
-
-/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
+2.7G    /tmp/wd
+2.6G    /tmp/wd/usr
+37M     /tmp/wd/var
+20M     /tmp/wd/lib64
+9.7M    /tmp/wd/etc
+9.0M    /tmp/wd/bin
+6.5M    /tmp/wd/sbin
+4.4M    /tmp/wd/boot
+3.1M    /tmp/wd/lib32
+12K     /tmp/wd/home
+4.0K    /tmp/wd/root
 
 
 
@@ -3886,90 +4067,54 @@ umount /dev/sdd4 -l
 lsblk
 
 
+*** 60
+
+cd /usr/src/linux
+
+make allnoconfig
+
+make menuconfig
+
+time nice -10 \
+make -j 6 && make modules_install
+
+
+
+KERNELVER=4.8.17-hardened-r2-netcard-usbboot
+
+
+KERNELVER=4.8.17-hardened-r2-netcard-usbboot-futex-x11-module
+
+EXTENSION=20170712
+
+cp .config /boot/config-${KERNELVER}-${EXTENSION}
+cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
+cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
+cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
+
+/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
+
+
+*** 62
+
+|                         | [2017-07-12 Wed 09:54] |
+|                         |                        |
+|-------------------------+------------------------|
+| * scenarios             |                        |
+|                         |                        |
+| ** kernal configuration |                        |
+|                         |                        |
+| x11                     | v                      |
+|                         |                        |
+| futex                   | v                      |
+|                         |                        |
+|                         |                        |
+
+
 
 *** 80
 
 qemu-system-x86_64 -m 1G -drive file=/dev/sdd
-
-
-
-
-*** 20
-
-ls -lha /tmp/*.tar.*
-
-#  /tmp/stage4_20170712_usbboot_netcard-dhcpcd.tar.xz
-
-s="/tmp/stage4_20170712_usbboot_netcard-dhcpcd.tar.xz"
-
-time nice -10 \
-tar xvpf \
-$s \
--C $w \
---xattrs
-
-[2017-07-13 Thu 10:25] # kernel
-
-real    0m29.873s
-user    0m29.594s
-sys     0m7.335s
-
-du -hd1 $w | sort -rh
-
-2.7G    /tmp/wd
-2.6G    /tmp/wd/usr
-37M     /tmp/wd/var
-20M     /tmp/wd/lib64
-9.7M    /tmp/wd/etc
-9.0M    /tmp/wd/bin
-6.5M    /tmp/wd/sbin
-4.4M    /tmp/wd/boot
-3.1M    /tmp/wd/lib32
-12K     /tmp/wd/home
-4.0K    /tmp/wd/root
-
-
-
-[2017-07-13 Thu 10:14] # tiny
-
-real    0m20.221s
-user    0m20.207s
-sys     0m4.901s
-
-du -hd1 $w | sort -rh
-
-1.7G    /tmp/wd/usr
-1.7G    /tmp/wd
-30M     /tmp/wd/var
-17M     /tmp/wd/lib64
-9.7M    /tmp/wd/etc
-9.0M    /tmp/wd/bin
-6.2M    /tmp/wd/sbin
-3.1M    /tmp/wd/lib32
-12K     /tmp/wd/home
-4.0K    /tmp/wd/root
-
-
-
-
-
-[2017-07-12 Wed 14:01]  # tmpfs
-
-real    0m29.795s
-user    0m29.659s
-sys     0m7.141s
-
-2.7G    /tmp/wd
-2.6G    /tmp/wd/usr
-37M     /tmp/wd/var
-20M     /tmp/wd/lib64
-9.7M    /tmp/wd/etc
-9.0M    /tmp/wd/bin
-6.5M    /tmp/wd/sbin
-4.4M    /tmp/wd/boot
-3.1M    /tmp/wd/lib32
-12K     /tmp/wd/home
-4.0K    /tmp/wd/root
 
 
 ** extract to usb and test
@@ -4770,6 +4915,8 @@ wget $p4$p3
 
 ** kernel configuration
 
+
+
 *** miniconfig
 
 Quick and dirty miniconfig howto, with feature suggestions.
@@ -4943,13 +5090,14 @@ http://archive.oreilly.com/pub/a/linux/excerpts/9780596100797/kernel-build-comma
 
 
 
-*** futex
+*** futex epoll pocket socket
 
 General setup → Configure standard kernel features (expert users)
 [*]   Enable futex support   
+[*]   Enable eventpoll support 
 
-
-
+Networking support > Networking options
+ <*> Packet socket                                                                                              
 
 *** x11
 
@@ -5100,42 +5248,6 @@ emerge @module-rebuild
 
 
 
-*** epoll
-
-General setup > Configure standard kernel features (expert users) 
-[*]   Enable eventpoll support 
-
-Setup is 15836 bytes (padded to 15872 bytes).
-System is 2653 kB
-CRC 9a4522d9
-Kernel: arch/x86/boot/bzImage is ready  (#9)
-
-real    24m9.160s
-user    8m12.880s
-sys     0m36.365s
-
-
-
-*** Packet socket
-
-Networking support > Networking options
- <*> Packet socket                                                                                              │ │  
-  <*>   Packet: sockets monitoring interface  
-
-
-Setup is 15836 bytes (padded to 15872 bytes).
-System is 2668 kB
-CRC d28c552d
-Kernel: arch/x86/boot/bzImage is ready  (#10)
-
-real    2m3.265s
-user    0m18.129s
-sys     0m3.039s
-
-
-https://forums.opensuse.org/showthread.php/430091-DHCP-gives-error-when-trying-to-start-service
-
-https://forums.gentoo.org/viewtopic-p-4995041.html?sid=d3a628503943a14f8f7b2e815b05f9c6
 
 
 
@@ -5210,8 +5322,8 @@ File systems > Pseudo filesystems
 
 File systems 
  [*] Enable POSIX file locking API    flock() 
-
-
+ [*] Second extended fs support   
+ [*] The Extended 4 (ext4) filesystem 
 
 
 
@@ -5227,6 +5339,9 @@ http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2
 
 -> General setup
 [*] Initial RAM filesystem and RAM disk (initramfs/initrd) support
+
+[ ] Embedded system # No
+
 
 -> Executable file formats / Emulations
 [*] Kernel support for ELF binaries
@@ -5273,14 +5388,15 @@ CONFIG_MULTIUSER=y t
 
 https://github.com/sabotage-linux/sabotage/issues/356
 
- Symbol: MULTIUSER [=n]                                                                                                                                     │  
-  │ Type  : boolean                                                                                                                                            │  
-  │ Prompt: Multiple users, groups and capabilities support                                                                                                    │  
-  │   Location:                                                                                                                                                │  
-  │     -> General setup                                                                                                                                       │  
-  │ (1)   -> Configure standard kernel features (expert users) (EXPERT [=y])                                                                                   │  
-  │   Defined at init/Kconfig:1392                                                                                                                             │  
+Symbol: MULTIUSER [=n]
+  │ Type  :boolean 
+  │ Prompt: Multiple users, groups and capabilities support    
+
+Location:                                                                                                         │     -> General setup
+  │ (1)   -> Configure standard kernel features (expert users) (EXPERT [=y])
+  │   Defined at init/Kconfig:1392
   │   Selected by: GRKERNSEC [=n]     
+
 
 
 Enable the block layer > Partition Types 
@@ -5336,21 +5452,19 @@ Device Drivers > SCSI device support
 
  [*] Serial ATA and Parallel ATA drivers (libata) 
 
-  [*]   AHCI SATA support                                                                                        │ │  
+  [*]   AHCI SATA support
   [*]   Platform AHCI SATA support  
 
 
-Symbol: ATA_PIIX [=y]                                                                                                                                      │  
-
-  │ Type  : tristate                                                                                                                                           │  
-  │ Prompt: Intel ESB, ICH, PIIX3, PIIX4 PATA/SATA support                                                                                                     │  
-  │   Location:                                                                                                                                                │  
-  │     -> Device Drivers                                                                                                                                      │  
-  │       -> Serial ATA and Parallel ATA drivers (libata) (ATA [=y])                                                                                           │  
-  │         -> ATA SFF support (for legacy IDE and PATA) (ATA_SFF [=y])                                                                                        │  
-  │ (1)       -> ATA BMDMA support (ATA_BMDMA [=y])                                                                                                            │  
-  │   Defined at drivers/ata/Kconfig:260                                                                                                                       │  
-  │   Depends on: ATA [=y] && ATA_SFF [=y] && ATA_BMDMA [=y] && PCI [=y]                                                                                       │  
+Symbol: ATA_PIIX [=y]                     
+  │ Type  : tristate                                  
+  │ Prompt: Intel ESB, ICH, PIIX3, PIIX4 PATA/SATA support  │   Location:                                                 
+  │     -> Device  Drivers           
+  │       -> Serial ATA and Parallel ATA drivers (libata) (ATA [=y])
+  │         -> ATA SFF support (for legacy IDE and PATA) (ATA_SFF [=y])                       
+  │ (1)       -> ATA BMDMA support (ATA_BMDMA [=y]) 
+  │   Defined at drivers/ata/Kconfig:260 
+  │   Depends on: ATA [=y] && ATA_SFF [=y] && ATA_BMDMA [=y] && PCI [=y]
 
 
 Device Drivers > USB support
@@ -6231,89 +6345,6 @@ tar -X /tmp/stage4.excl -c / | xz -1vT0  > /tmp/stage4_20170706_tiny.tar.xz
 
 100 %      518.5 MiB / 2172.1 MiB = 0.239    28 MiB/s       1:17   
 
-
-* kernel
-
-** chroot
-
-
-# transplantation directory
-td="/tmp/gentoo"
-
-mkdir $td
-
-mount /dev/sdd4 $td
-
-# mkdir $td/boot
-
-mount /dev/sdd2 $td/boot
-
-
-thedir=$td
-
-mount -t proc proc  ${thedir}/proc
-mount --rbind /sys  ${thedir}/sys
-mount --make-rslave ${thedir}/sys
-mount --rbind /dev  ${thedir}/dev
-mount --make-rslave ${thedir}/dev
-
-chroot ${thedir} /bin/bash
-source /etc/profile
-export PS1="(chroot) $PS1"
-
-
-mount -o size=90%,noatime,nodiratime -t tmpfs tmpfs /tmp
-
-# mkdir /var/tmp/portage
-
-mount -o size=90%,noatime,nodiratime,uid=portage,gid=portage,mode=775 -t tmpfs tmpfs /var/tmp/portage 
-
-
-exit
-cd
-
-umount -l ${thedir}/dev{/shm,/pts,}
-umount -l ${thedir}{/sys,/proc}
-
-
-umount /dev/sdd2
-umount -l /dev/sdd4
-
-
-
-** kernel compile install qemu
-  
-cd /usr/src/linux
-
-ls -lha .c*
--rw-r--r-- 1 root root  59 Oct  3  2016 .cocciconfig
--rw-r--r-- 1 root root 60K Jul  6 16:35 .config
--rw-r--r-- 1 root root 29K Jul  6 16:00 .config-tiny-20170706
--rw-r--r-- 1 root root 29K Jul  6 15:27 .config.old
-
-
-cp .config-tiny-20170706  .config 
-
-make menuconfig
-
-time nice -10 \
-make -j6 && make modules_install
-
-
-KERNELVER=4.8.17-fs-udev-gpt
-
-KERNELVER=4.8.17-fs-udev-gpt-netcard-cpu-tmpfs-epoll-packet
-EXTENSION=201707011
-
-cp .config /boot/config-${KERNELVER}-${EXTENSION}
-cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
-cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
-cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
-
-/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
-
-
-qemu-system-x86_64 -m 1G -drive file=/dev/sdd
 
 
 
@@ -7297,129 +7328,6 @@ time nice -10 \
 tar -X /tmp/stage4.excl -c / | xz -7vT0  > /tmp/stage4_20170711_fs_netcard.tar.xz
 
 100 %      445.8 MiB / 2282.3 MiB = 0.195   7.1 MiB/s       5:19             
-
-
-* extract to usb
-
-# working direcxtory
-wy="/tmp/wy"
-
-# transplantation directory
-td="/tmp/gentoo"
-
-** 40 grub
-
-grub-install /dev/sdd
-
-# add rootwait
-sed -i 's/#GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="rootwait"/' /etc/default/grub 
-
-cat /etc/default/grub | grep GRUB_CMDLINE_LINUX_DEFAULT
-
-# update grub.cfg
-/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
-
-
-
-** 30 fstab 
-
-
-
-# yusb, after chroot
-
-blkid | grep sdd
-
-/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
-/dev/sdd2: UUID="665e3ee0-35f5-426d-84b5-3b6932a7e0ed" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
-/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
-/dev/sdd4: UUID="e9b963a4-a54b-4fe0-8efc-1160134e3a19" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
-
-
-cat <<EOF > /etc/fstab
-UUID=e9b963a4-a54b-4fe0-8efc-1160134e3a19  /            ext4    noatime              0 1
-
-UUID=665e3ee0-35f5-426d-84b5-3b6932a7e0ed  /boot        ext2    defaults,noatime     0 2
-
-tmpfs   /var/tmp/portage        tmpfs   uid=portage,gid=portage,mode=775,noatime    0 0
-tmpfs   /tmp         tmpfs   mode=775,noatime          0  0
-
-EOF
-
-cat /etc/fstab
-
-
-** 20 mount extract chroot qemu
-
-# transplantation directory
-td="/tmp/gentoo"
-
-mkdir $td
-
-mount /dev/sdd4 $td
-
-# mkdir $td/boot
-
-mkdir $td/boot
-
-mount /dev/sdd2 $td/boot
-
-
-
-# extract xz
-
-ls -lha $wy/tmp/*
-
-s="/tmp/wy/tmp/stage4_20170711_fs_netcard.tar.xz"
-
-time nice -10 \
-tar xvpf \
-$s \
--C $td \
---xattrs
-
-
-yusb [2017-07-11 Tue 15:30]
-
-real    4m13.825s
-user    0m30.163s
-sys     0m11.327s
-
-
-thedir=$td
-
-mount -t proc proc  ${thedir}/proc
-mount --rbind /sys  ${thedir}/sys
-mount --make-rslave ${thedir}/sys
-mount --rbind /dev  ${thedir}/dev
-mount --make-rslave ${thedir}/dev
-
-chroot ${thedir} /bin/bash
-source /etc/profile
-export PS1="(chroot) $PS1"
-
-
-mount -o size=90%,noatime,nodiratime -t tmpfs tmpfs /tmp
-
-mkdir /var/tmp/portage
-
-mount -o size=90%,noatime,nodiratime,uid=portage,gid=portage,mode=775 -t tmpfs tmpfs /var/tmp/portage 
-
-
-exit
-cd
-
-umount -l ${thedir}/dev{/shm,/pts,}
-umount -l ${thedir}{/sys,/proc}
-
-umount /dev/sdd2
-
-umount /dev/sdd4 -l
-
-
-
-
-
-
 
 
 

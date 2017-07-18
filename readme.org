@@ -4160,67 +4160,21 @@ rm -rf $w
 
 # in host, not in chroot
 
-[2017-07-12 Wed 16:33]
+[2017-07-18 Tue 08:17]
 
-blkid | grep sdd
-/dev/sdd2: UUID="8957490d-6c6b-4ca6-ab79-cb3eee68b579" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
-/dev/sdd4: UUID="a549ea3d-7159-43b2-a9aa-a37fc53d9c33" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
-/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
-/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
-
-
-cat <<EOF > $w/etc/fstab
-UUID=a549ea3d-7159-43b2-a9aa-a37fc53d9c33  /            ext4    noatime              0 1
-UUID=8957490d-6c6b-4ca6-ab79-cb3eee68b579  /boot        ext2    defaults,noatime     0 2
-
-tmpfs   /var/tmp/portage        tmpfs   uid=portage,gid=portage,mode=775,noatime    0 0
-tmpfs   /tmp         tmpfs   mode=775,noatime          0  0
-
-EOF
-
-cat $w/etc/fstab
-
-
-[2017-07-12 Wed 11:46]
-
-blkid | grep sdd
-
-/dev/sdd2: UUID="ffc4ca06-da75-4232-87c6-a316e58c0dbb" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
-/dev/sdd4: UUID="17e6765b-f940-4d6a-9d37-821432cd735f" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
-/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
-/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
-
-
-cat <<EOF > $w/etc/fstab
-UUID=17e6765b-f940-4d6a-9d37-821432cd735f  /            ext4    noatime              0 1
-UUID=ffc4ca06-da75-4232-87c6-a316e58c0dbb  /boot        ext2    defaults,noatime     0 2
-
-tmpfs   /var/tmp/portage        tmpfs   uid=portage,gid=portage,mode=775,noatime    0 0
-tmpfs   /tmp         tmpfs   mode=775,noatime          0  0
-
-EOF
-
-cat $w/etc/fstab
-
-
-
-
-blkid | grep sdd
-
-/dev/sdd2: UUID="df3ce848-eee5-4105-a7e5-4c8125f2a310" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
-/dev/sdd4: UUID="c1d58038-a190-4056-ab49-05aa4457173d" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd2: UUID="144e4db9-2f72-4d2f-9e12-ae47458fd50c" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="ba071ce1-a4e1-4307-977c-ede24195a45d" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
 /dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
 /dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
 
 
 
-
 cat <<EOF > $w/etc/fstab
-UUID=c1d58038-a190-4056-ab49-05aa4457173d  /            ext4    noatime              0 1
-UUID=df3ce848-eee5-4105-a7e5-4c8125f2a310  /boot        ext2    defaults,noatime     0 2
+UUID=ba071ce1-a4e1-4307-977c-ede24195a45d  /            ext4    noatime              0 1
+UUID=144e4db9-2f72-4d2f-9e12-ae47458fd50c  /boot        ext2    defaults,noatime     0 2
 
 tmpfs   /var/tmp/portage        tmpfs   uid=portage,gid=portage,mode=775,noatime    0 0
-tmpfs   /tmp         tmpfs   mode=775,noatime          0  0
+tmpfs   /tmp         tmpfs   mode=777,noatime          0  0
 
 EOF
 
@@ -4317,9 +4271,11 @@ mount /dev/sdb2 $w/boot
 
 ls -lha /tmp/wd/tmp/*.tar.*
 
-# /tmp/wd/tmp/stage4_20170712_netcard_x11_futex.tar.xz
+ls -lha /tmp/*.tar.*
 
-s="/tmp/wd/tmp/stage4_20170712_netcard_x11_futex.tar.xz"
+# /tmp/stage4_20170717_nvidia.tar.xz
+
+s="/tmp/stage4_20170717_nvidia.tar.xz"
 
 
 time nice -10 \
@@ -4327,6 +4283,36 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+
+[2017-07-18 Tue 08:06]  # nvidia
+
+real    7m57.233s
+user    0m41.983s
+sys     0m14.061s
+
+3.1G    /tmp/gentoo
+3.0G    /tmp/gentoo/usr
+36M     /tmp/gentoo/lib64
+32M     /tmp/gentoo/var
+8.9M    /tmp/gentoo/etc
+8.9M    /tmp/gentoo/bin
+8.7M    /tmp/gentoo/boot
+6.3M    /tmp/gentoo/sbin
+3.1M    /tmp/gentoo/lib32
+1.1M    /tmp/gentoo/opt
+12K     /tmp/gentoo/lost+found
+6.0K    /tmp/gentoo/home
+5.0K    /tmp/gentoo/root
+2.0K    /tmp/gentoo/run
+1.0K    /tmp/gentoo/tmp
+1.0K    /tmp/gentoo/sys
+1.0K    /tmp/gentoo/proc
+1.0K    /tmp/gentoo/mnt
+1.0K    /tmp/gentoo/media
+1.0K    /tmp/gentoo/dev
+
+
 
 [2017-07-12 Wed 16:10]
 

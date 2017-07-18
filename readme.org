@@ -1,11 +1,446 @@
 * scenarios
 
+** kernel and package build
+
+*** 3 parepare
+
+|      | make.conf | kernel configuration                   | service | portage |
+|------+-----------+----------------------------------------+---------+---------|
+|      |           |                                        |         |         |
+|      |           |                                        |         |         |
+| udev | v         | v                                      | v       |         |
+|      |           |                                        |         |         |
+| x11  | v         | v                                      |         | v       |
+|------+-----------+----------------------------------------+---------+---------|
+|      |           |                                        |         |         |
+|      |           | usb disk kernel                        |         |         |
+|      |           |                                        |         |         |
+|      |           | Smallest Kernel Config                 |         |         |
+|      |           |                                        |         |         |
+|      |           | cpu tmpfs fs futex eventpoll MULTIUSER |         |         |
+|      |           |                                        |         |         |
+|      |           | netcards                               |         |         |
+|------+-----------+----------------------------------------+---------+---------|
+|      |           |                                        |         | grub    |
+
+
+*** x11
+
+x11-base/xorg-server
+
+| 1 | 2 | 3 | 4 | 5 | kernel option                             | defconfig | change to | reference    |
+|   |   |   |   |   |                                           |           |           |              |
+|---+---+---+---+---+-------------------------------------------+-----------+-----------+--------------|
+| v |   |   |   |   | Device Drivers                            |           |           |              |
+|   | v |   |   |   | Input device support                      |           |           |              |
+|   |   | v |   |   | Event interface                           | *         |           |              |
+|---+---+---+---+---+-------------------------------------------+-----------+-----------+--------------|
+|   |   |   |   |   |                                           |           |           |              |
+|   | v |   |   |   | Graphics support                          |           |           |              |
+|   |   | v |   |   | Frame buffer Devices                      |           |           |              |
+|   |   |   | v |   | Support for frame buffer devices          |           |           |              |
+|   |   |   |   | v | Enable firmware EDID                      | none      |           | keep it none |
+|---+---+---+---+---+-------------------------------------------+-----------+-----------+--------------|
+|   |   |   |   |   |                                           |           |           |              |
+|   |   | v |   |   | Console display driver support            |           |           |              |
+|   |   |   | v |   | Framebuffer Console support               | *         |           |              |
+|   |   |   |   |   |                                           |           |           |              |
+|---+---+---+---+---+-------------------------------------------+-----------+-----------+--------------|
+|   |   |   |   |   |                                           |           |           |              |
+|   |   | v |   |   | Direct Rendering Manager (XFree86         |           |           |              |
+|   |   |   | v |   | Enable legacy fbdev support for           | *         |           | 2            |
+|---+---+---+---+---+-------------------------------------------+-----------+-----------+--------------|
+|   |   |   |   |   |                                           |           |           |              |
+|   |   | v |   |   | Nouveau (NVIDIA) cards                    | none      | M         |              |
+|   |   |   |   |   |                                           |           | *         |              |
+|   |   | v |   |   | Intel 8xx/9xx/G3x/G4x/HD Graphics         |           | M         | h77md3h      |
+|---+---+---+---+---+-------------------------------------------+-----------+-----------+--------------|
+|   |   |   |   |   |                                           |           |           |              |
+|   |   |   |   |   | NVidia/nvidia-drivers                     |           |           |              |
+|   |   |   |   |   |                                           |           |           |              |
+| 1 |   |   |   |   | Enable loadable module support            |           |           |              |
+|   |   |   |   |   |                                           |           |           |              |
+| 1 |   |   |   |   | Processor type and features               |           |           |              |
+|   | 2 |   |   |   | MTRR (Memory Type Range Register) support | *         |           |              |
+|   |   |   |   |   |                                           |           |           |              |
+| 1 |   |   |   |   | Device Drivers                            |           |           |              |
+|   | 2 |   |   |   | Graphics support                          |           |           |              |
+|   |   | 3 |   |   | /dev/agpgart (AGP Support)                |           |           |              |
+|   |   |   |   |   |                                           |           |           |              |
+|   |   | 3 |   |   | Nouveau (nVidia) cards                    | blank     |           |              |
+|   |   |   |   |   |                                           |           |           |              |
+
+reference
+
+
+1
+
+https://wiki.gentoo.org/wiki/Xorg/Guide
+
+
+2
+
+https://wiki.gentoo.org/wiki/Nouveau
+
+
+3
+
+https://forums.gentoo.org/viewtopic-p-6655021.html
+
+
+
+pm="$wy/etc/portage/make.conf"
+
+cat $pm
+
+sed -i 's/nouveau/nvidia/g' $pm
+
+
+
+
+
+
+emerge -pv xorg-drivers 
+
+proxychains -f /root/proxychains.conf \
+emerge xorg-drivers 
+
+
+# emerge -pv sys-kernel/linux-firmware
+
+# proxychains -f /root/proxychains.conf \
+# emerge sys-kernel/linux-firmware
+
+proxychains -f /root/proxychains.conf \
+emerge --ask --changed-use --deep @world
+
+
+
+emerge -pv x11-base/xorg-server
+
+proxychains -f /root/proxychains.conf \
+emerge  x11-base/xorg-server
+
+
+
+
+emerge -pv x11-apps/xrandr
+
+proxychains -f /root/proxychains.conf \
+emerge x11-apps/xrandr
+
+
+
+
+emerge -pv x11-terms/xterm
+
+proxychains -f /root/proxychains.conf \
+emerge x11-terms/xterm
+
+ * Messages for package media-fonts/liberation-fonts-2.00.1-r1:
+
+ * The following fontconfig configuration files have been installed:
+ * 
+ *   60-liberation.conf
+ * 
+ * Use `eselect fontconfig` to enable/disable them.
+
+ * Messages for package media-libs/fontconfig-2.11.1-r2:
+
+eselect fontconfig enable 60-liberation.conf
+
+eselect fontconfig list
+
+
+emerge -pv spectrwm
+
+proxychains -f /root/proxychains.conf \
+emerge spectrwm
+
+
+
+emerge -pv x11-drivers/nvidia-drivers
+
+proxychains -f /root/proxychains.conf \
+emerge x11-drivers/nvidia-drivers  --autounmask-write
+
+dispatch-conf
+
+
+emerge x11-drivers/nvidia-drivers 
+
+ * This ebuild installs a kernel module and X driver. Both must
+ * match explicitly in their version. This means, if you restart
+ * X, you must modprobe -r nvidia before starting it back up
+ * 
+ * To use the NVIDIA GLX, run "eselect opengl set nvidia"
+ * 
+ * To use the NVIDIA CUDA/OpenCL, run "eselect opencl set nvidia"
+
+proxychains -f /root/proxychains.conf \
+emerge @module-rebuild
+
+
+
+
+
+
+
+
+
+
+
+
+
+*** netcard
+
+[*] Enable loadable module suppor
+
+[*] Networking support  ---> 
+ Networking options
+ [*] TCP/IP networking
+
+Device Drivers
+ [*] Network device support  ---> 
+Ethernet driver support
+[*]   Realtek devices
+<M>     Realtek 8169 gigabit ethernet support # M4A87TD/USB
+
+01:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. RTL8111/8168/8411 PCI Express Gigabit Ethernet Controller (rev 06)
+        Subsystem: ASUSTeK Computer Inc. P8P67 and other motherboards
+        Flags: bus master, fast devsel, latency 0, IRQ 29, NUMA node 0
+        I/O ports at c800 [size=256]
+        Memory at d3fff000 (64-bit, prefetchable) [size=4K]
+        Memory at d3ff8000 (64-bit, prefetchable) [size=16K]
+        Capabilities: [40] Power Management version 3
+        Capabilities: [50] MSI: Enable+ Count=1/1 Maskable- 64bit+
+        Capabilities: [70] Express Endpoint, MSI 01
+        Capabilities: [b0] MSI-X: Enable- Count=4 Masked-
+        Capabilities: [d0] Vital Product Data
+        Capabilities: [100] Advanced Error Reporting
+        Capabilities: [140] Virtual Channel
+        Capabilities: [160] Device Serial Number 01-00-00-00-68-4c-e0-00
+        Kernel driver in use: r8169
+        Kernel modules: r8169
+
+
+
+[*]   Atheros devices  
+<M>     Atheros L1C Gigabit Ethernet support  # h77md3h 
+
+Networking support > Wireless
+<*>   cfg80211 - wireless configuration API 
+<M>   Generic IEEE 802.11 Networking Stack (mac80211) 
+
+Device Drivers > Network device support > Wireless LAN 
+[*]   Intersil devices (NEW)  
+ <M>     Softmac Prism54 support                                                                                │ │  
+  <M>       Prism54 USB support   
+
+
+
+
+
+
+
+*** cpu tmpfs fs futex eventpoll MULTIUSER
+
+Processor type and features 
+[*] Symmetric multi-processing support
+(4) Maximum number of CPUs 
+[ ] SMT (Hyperthreading) scheduler support (NEW) 
+[*] Multi-core scheduler support (NEW)
+
+File systems > Pseudo filesystems
+ <*> Userspace-driven configuration filesystem 
+
+General setup 
+ [*] Use full shmem filesystem 
+
+File systems > Pseudo filesystems
+[*] Tmpfs virtual memory file system support (former shm fs)   
+ [*]   Tmpfs POSIX Access Control Lists
+ -*-   Tmpfs extended attributes                                                                                │ │  
+
+File systems 
+ [*] Enable POSIX file locking API    flock() 
+ [*] Second extended fs support   
+ [*] The Extended 4 (ext4) filesystem 
+
+General setup → Configure standard kernel features (expert users)
+[*]   Enable futex support   
+[*]   Enable eventpoll support 
+
+Networking support > Networking options
+ <*> Packet socket                                                                                              
+
+
+
+CONFIG_MULTIUSER=y t
+
+https://github.com/sabotage-linux/sabotage/issues/356
+
+Symbol: MULTIUSER [=n]
+  │ Type  :boolean 
+  │ Prompt: Multiple users, groups and capabilities support    
+
+Location:                                                                                                         │     -> General setup
+  │ (1)   -> Configure standard kernel features (expert users) (EXPERT [=y])
+  │   Defined at init/Kconfig:1392
+  │   Selected by: GRKERNSEC [=n]     
+
+
+*** Smallest Kernel Config
+
+http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2015-edition.html
+
+[*] 64-bit kernel
+
+-> General setup
+  -> Configure standard kernel features
+[*] Enable support for printk
+
+-> General setup
+[*] Initial RAM filesystem and RAM disk (initramfs/initrd) support
+
+[ ] Embedded system # No
+
+
+-> Executable file formats / Emulations
+[*] Kernel support for ELF binaries
+[*] Kernel support for scripts starting with #!
+
+-> Device Drivers
+  -> Character devices
+[*] Enable TTY
+
+  -> Serial drivers
+[*] 8250/16550 and compatible serial support
+[*]   Console on 8250/16550 and compatible serial port
+
+-> File systems
+  -> Pseudo filesystems
+[*] /proc file system support
+[*] sysfs file system support
+
+
+
+
+
+
+
+
+
+
+*** usb disk kernel
+
+| kernel configuration       |
+|----------------------------|
+| EFI GUID Partition support |
+|                            |
+| Udev                       |
+|                            |
+| PCI                        |
+|                            |
+| SCSI                       |
+|                            |
+| USB                        |
+|                            |
+| piix                       |
+
+
+Enable the block layer > Partition Types 
+
+[*] Advanced partition selection   
+ [*]   EFI GUID Partition support (NEW)
+
+https://wiki.archlinux.org/index.php/partitioning#GPT_Kernel_Support
+
+
+
+Bus options 
+ [*] PCI support  
+
+[*] Enable the block layer  ---> 
+
+Device Drivers > SCSI device support 
+ [*] SCSI device support 
+
+ [*] Serial ATA and Parallel ATA drivers (libata) 
+
+  [*]   AHCI SATA support
+  [*]   Platform AHCI SATA support  
+
+
+Symbol: ATA_PIIX [=y]                     
+  │ Type  : tristate                                  
+  │ Prompt: Intel ESB, ICH, PIIX3, PIIX4 PATA/SATA support  │   Location:                                                 
+  │     -> Device  Drivers           
+  │       -> Serial ATA and Parallel ATA drivers (libata) (ATA [=y])
+  │         -> ATA SFF support (for legacy IDE and PATA) (ATA_SFF [=y])                       
+  │ (1)       -> ATA BMDMA support (ATA_BMDMA [=y]) 
+  │   Defined at drivers/ata/Kconfig:260 
+  │   Depends on: ATA [=y] && ATA_SFF [=y] && ATA_BMDMA [=y] && PCI [=y]
+
+
+Device Drivers > USB support
+ [*]   Support for Host-side USB  
+
+ [*]     xHCI HCD (USB 3.0) support 
+ [*]     EHCI HCD (USB 2.0) support 
+ [*]     OHCI HCD (USB 1.1) support  
+ [*]     USB Mass Storage support
+ 
+
+*** udev
+
+| kernel configuration |
+|                      |
+| USE flags            |
+|                      |
+| Emerge               |
+|                      |
+| service              |
+
+
+
+https://wiki.gentoo.org/wiki/Udev
+
+General setup  --->
+    [*] Configure standard kernel features (expert users)  --->
+        [ ] Enable deprecated sysfs features to support old userspace tools
+        [*] Enable signalfd() system call
+Enable the block layer  --->
+    [*] Block layer SG support v4
+Networking support  --->
+    Networking options  --->
+        <*> Unix domain sockets
+Device Drivers  --->
+    Generic Driver Options  --->
+        ()  path to uevent helper
+        [*] Maintain a devtmpfs filesystem to mount at /dev
+    < > ATA/ATAPI/MFM/RLL support (DEPRECATED)  --->
+File systems  --->
+    [*] Inotify support for userspace
+    Pseudo filesystems --->
+        [*] /proc file system support
+        [*] sysfs file system support
+
+
+
+nano /etc/portage/make.conf
+
+USE="udev"
+
+
+proxychains -f /root/proxychains.conf \
+emerge --ask --changed-use --deep @world
+
+rc-update add udev sysinit
+
+
 
 ** savedefconfig alldefconfig
-
-
-
-
 
 *** my config
 
@@ -5139,6 +5574,7 @@ General setup → Configure standard kernel features (expert users)
 
 Networking support > Networking options
  <*> Packet socket                                                                                              
+
 
 *** x11
 

@@ -4132,6 +4132,23 @@ cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
 qemu-system-x86_64 -m 1G -drive file=/dev/sdd
 
 
+
+k=$w/boot/kernel-4.8.17-hardened-r2-x11-20170717
+
+echo $k
+
+echo $w
+
+qemu-system-x86_64 \
+    -kernel $k \
+    -nographic -append "console=ttyS0" -enable-kvm \
+    -drive file=/dev/sdd
+
+
+Exit the VM by hitting Ctl-a c then typing “quit” at the qemu monitor shell.
+
+
+
 ** extract to usb and test
 
 |    |                   |
@@ -4159,6 +4176,30 @@ rm -rf $w
 *** 30
 
 # in host, not in chroot
+
+blkid | grep sdd
+
+[2017-07-18 Tue 14:40]
+
+/dev/sdd2: UUID="a9323f73-01a3-422b-ba4e-e765534215e6" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="295a3dfd-8695-4287-b518-8656753f5024" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+
+
+cat <<EOF > $w/etc/fstab
+UUID=295a3dfd-8695-4287-b518-8656753f5024  /            ext4    noatime              0 1
+UUID=a9323f73-01a3-422b-ba4e-e765534215e6  /boot        ext2    defaults,noatime     0 2
+
+tmpfs   /var/tmp/portage        tmpfs   uid=portage,gid=portage,mode=775,noatime    0 0
+tmpfs   /tmp         tmpfs   mode=777,noatime          0  0
+
+EOF
+
+cat $w/etc/fstab
+
+
 
 [2017-07-18 Tue 08:17]
 
@@ -4269,13 +4310,10 @@ mount /dev/sdb2 $w/boot
 
 *** 20
 
-ls -lha /tmp/wd/tmp/*.tar.*
 
-ls -lha /tmp/*.tar.*
+s=$( ls /tmp/*.tar.* )
 
-# /tmp/stage4_20170717_nvidia.tar.xz
-
-s="/tmp/stage4_20170717_nvidia.tar.xz"
+echo $s
 
 
 time nice -10 \
@@ -5657,7 +5695,7 @@ EOF
 cat /tmp/stage4.excl
 
 time nice -10 \
-tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170717_nvidia.tar.xz
+tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170718_nvidia.tar.xz
   100 %     818.8 MiB / 3,159.0 MiB = 0.259   5.6 MiB/s       9:21             
 
 real    9m22.081s

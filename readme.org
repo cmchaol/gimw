@@ -2,26 +2,307 @@
 
 ** kernel and package build
 
-*** 3 parepare
+*** concepts
 
 |      | make.conf | kernel configuration                   | service | portage |
 |------+-----------+----------------------------------------+---------+---------|
-|      |           |                                        |         |         |
-|      |           |                                        |         |         |
-| udev | v         | v                                      | v       |         |
-|      |           |                                        |         |         |
-| x11  | v         | v                                      |         | v       |
-|------+-----------+----------------------------------------+---------+---------|
-|      |           |                                        |         |         |
-|      |           | usb disk kernel                        |         |         |
-|      |           |                                        |         |         |
 |      |           | Smallest Kernel Config                 |         |         |
+|      |           | f="/tmp/d-20170719-1040"               |         |         |
 |      |           |                                        |         |         |
 |      |           | cpu tmpfs fs futex eventpoll MULTIUSER |         |         |
+|      |           | f="/tmp/d-20170719-1050"               |         |         |
+|      |           |                                        |         |         |
+|      |           | usb disk kernel                        |         |         |
+|      |           | f="/tmp/d-20170719-1055"               |         |         |
 |      |           |                                        |         |         |
 |      |           | netcards                               |         |         |
+|      |           | f="/tmp/d-20170719-1100"               |         |         |
 |------+-----------+----------------------------------------+---------+---------|
-|      |           |                                        |         | grub    |
+| udev | v         | f="/tmp/d-20170719-1110"               | v       |         |
+|      |           |                                        |         |         |
+| x11  | v         | f="/tmp/d-20170719-1115"               |         | v       |
+|      |           |                                        |         |         |
+|------+-----------+----------------------------------------+---------+---------|
+| grub |           | boot                                   |         | v       |
+|      |           |                                        |         |         |
+|      |           |                                        |         |         |
+
+
+*** kernel
+
+
+cd /usr/src/linux
+
+make allnoconfig
+
+make menuconfig
+
+
+
+f="/tmp/d-20170719-1040" 
+
+f="/tmp/d-20170719-1050"
+
+f="/tmp/d-20170719-1055" 
+
+f="/tmp/d-20170719-1100" 
+
+f="/tmp/d-20170719-1110" 
+
+f="/tmp/d-20170719-1115"
+
+cp .config $f
+
+cat $f
+
+
+make allnoconfig
+
+make menuconfig
+
+
+make KCONFIG_ALLCONFIG=$f alldefconfig
+
+
+time nice -10 \
+make -j 6 && make modules_install
+
+
+
+KERNELVER=4.8.17-hardened-r2-netcard-usbboot
+
+
+KERNELVER=4.8.17-hardened-r2-x11
+
+EXTENSION=20170719
+
+cp .config /boot/config-${KERNELVER}-${EXTENSION}
+cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
+cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
+cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
+
+/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
+
+
+
+
+*** Smallest Kernel Config
+
+http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2015-edition.html
+
+[*] 64-bit kernel
+
+-> General setup
+  -> Configure standard kernel features
+[*] Enable support for printk
+
+-> General setup
+[*] Initial RAM filesystem and RAM disk (initramfs/initrd) support
+
+[ ] Embedded system # No
+
+
+-> Executable file formats / Emulations
+[*] Kernel support for ELF binaries
+[*] Kernel support for scripts starting with #!
+
+-> Device Drivers
+  -> Character devices
+[*] Enable TTY
+
+  -> Serial drivers
+[*] 8250/16550 and compatible serial support
+[*]   Console on 8250/16550 and compatible serial port
+
+-> File systems
+  -> Pseudo filesystems
+[*] /proc file system support
+[*] sysfs file system support
+
+
+
+
+
+
+
+*** cpu tmpfs fs futex eventpoll MULTIUSER
+
+Processor type and features 
+[*] Symmetric multi-processing support
+(4) Maximum number of CPUs 
+[ ] SMT (Hyperthreading) scheduler support (NEW) 
+[*] Multi-core scheduler support (NEW)
+
+File systems > Pseudo filesystems
+ <*> Userspace-driven configuration filesystem 
+
+General setup 
+ [*] Use full shmem filesystem 
+
+File systems > Pseudo filesystems
+[*] Tmpfs virtual memory file system support (former shm fs)   
+ [*]   Tmpfs POSIX Access Control Lists
+ -*-   Tmpfs extended attributes                                                                                │ │  
+
+File systems 
+ [*] Enable POSIX file locking API    flock() 
+ [*] Second extended fs support   
+ [*] The Extended 4 (ext4) filesystem 
+
+General setup → Configure standard kernel features (expert users)
+[*]   Multiple users, groups and capabilities support 
+
+[*]   Enable futex support   
+[*]   Enable eventpoll support 
+
+Networking support > Networking options
+ <*> Packet socket                                                                                              
+
+
+*** usb disk kernel
+
+| kernel configuration       |
+|----------------------------|
+| EFI GUID Partition support |
+|                            |
+| Udev                       |
+|                            |
+| PCI                        |
+|                            |
+| SCSI                       |
+|                            |
+| USB                        |
+|                            |
+| piix                       |
+
+
+Enable the block layer > Partition Types 
+
+[*] Advanced partition selection   
+ [*]   EFI GUID Partition support (NEW)
+
+https://wiki.archlinux.org/index.php/partitioning#GPT_Kernel_Support
+
+
+
+Bus options 
+ [*] PCI support  
+
+[*] Enable the block layer  ---> 
+
+Device Drivers > SCSI device support 
+ [*] SCSI device support 
+
+ [*] Serial ATA and Parallel ATA drivers (libata) 
+  [*]   AHCI SATA support
+  [*]   Platform AHCI SATA support  
+  
+  [*]       Intel ESB, ICH, PIIX3, PIIX4 PATA/SATA support 
+
+
+Device Drivers > USB support
+ [*]   Support for Host-side USB  
+
+ [*]     xHCI HCD (USB 3.0) support 
+ [*]     EHCI HCD (USB 2.0) support 
+ [*]     OHCI HCD (USB 1.1) support  
+ [*]     USB Mass Storage support
+
+
+*** netcard
+
+[*] Enable loadable module suppor
+
+[*] Networking support  ---> 
+ Networking options
+ [*] TCP/IP networking
+
+Device Drivers
+ [*] Network device support  ---> 
+Ethernet driver support
+[*]   Realtek devices
+<M>     Realtek 8169 gigabit ethernet support # M4A87TD/USB
+
+01:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. RTL8111/8168/8411 PCI Express Gigabit Ethernet Controller (rev 06)
+        Subsystem: ASUSTeK Computer Inc. P8P67 and other motherboards
+        Flags: bus master, fast devsel, latency 0, IRQ 29, NUMA node 0
+        I/O ports at c800 [size=256]
+        Memory at d3fff000 (64-bit, prefetchable) [size=4K]
+        Memory at d3ff8000 (64-bit, prefetchable) [size=16K]
+        Capabilities: [40] Power Management version 3
+        Capabilities: [50] MSI: Enable+ Count=1/1 Maskable- 64bit+
+        Capabilities: [70] Express Endpoint, MSI 01
+        Capabilities: [b0] MSI-X: Enable- Count=4 Masked-
+        Capabilities: [d0] Vital Product Data
+        Capabilities: [100] Advanced Error Reporting
+        Capabilities: [140] Virtual Channel
+        Capabilities: [160] Device Serial Number 01-00-00-00-68-4c-e0-00
+        Kernel driver in use: r8169
+        Kernel modules: r8169
+
+
+
+[*]   Atheros devices  
+<M>     Atheros L1C Gigabit Ethernet support  # h77md3h 
+
+Networking support > Wireless
+<*>   cfg80211 - wireless configuration API 
+[ ]     enable powersave by default   # disable
+<M>   Generic IEEE 802.11 Networking Stack (mac80211) 
+
+Device Drivers > Network device support > Wireless LAN 
+[*]   Intersil devices (NEW)  
+ <M>     Softmac Prism54 support                                                                                │ │  
+  <M>       Prism54 USB support   
+ 
+
+*** udev
+
+| kernel configuration |
+|                      |
+| USE flags            |
+|                      |
+| Emerge               |
+|                      |
+| service              |
+
+
+
+https://wiki.gentoo.org/wiki/Udev
+
+General setup  --->
+    [*] Configure standard kernel features (expert users)  --->
+        [ ] Enable deprecated sysfs features to support old userspace tools
+        [*] Enable signalfd() system call
+Enable the block layer  --->
+    [*] Block layer SG support v4
+Networking support  --->
+    Networking options  --->
+        <*> Unix domain sockets
+Device Drivers  --->
+    Generic Driver Options  --->
+        ()  path to uevent helper
+        [*] Maintain a devtmpfs filesystem to mount at /dev
+    < > ATA/ATAPI/MFM/RLL support (DEPRECATED)  --->
+File systems  --->
+    [*] Inotify support for userspace
+    Pseudo filesystems --->
+        [*] /proc file system support
+        [*] sysfs file system support
+
+
+
+nano /etc/portage/make.conf
+
+cat /etc/portage/make.conf | grep USE
+
+USE="udev"
+
+
+proxychains -f /root/proxychains.conf \
+emerge --ask --changed-use --deep @world
+
+rc-update add udev sysinit
 
 
 *** x11
@@ -106,30 +387,16 @@ proxychains -f /root/proxychains.conf \
 emerge xorg-drivers 
 
 
-# emerge -pv sys-kernel/linux-firmware
-
-# proxychains -f /root/proxychains.conf \
-# emerge sys-kernel/linux-firmware
-
-proxychains -f /root/proxychains.conf \
-emerge --ask --changed-use --deep @world
-
-
-
 emerge -pv x11-base/xorg-server
 
 proxychains -f /root/proxychains.conf \
 emerge  x11-base/xorg-server
 
 
-
-
 emerge -pv x11-apps/xrandr
 
 proxychains -f /root/proxychains.conf \
 emerge x11-apps/xrandr
-
-
 
 
 emerge -pv x11-terms/xterm
@@ -167,6 +434,14 @@ emerge x11-drivers/nvidia-drivers  --autounmask-write
 dispatch-conf
 
 
+
+
+proxychains -f /root/proxychains.conf \
+emerge --ask --changed-use --deep @world
+
+
+
+
 emerge x11-drivers/nvidia-drivers 
 
  * This ebuild installs a kernel module and X driver. Both must
@@ -181,262 +456,6 @@ proxychains -f /root/proxychains.conf \
 emerge @module-rebuild
 
 
-
-
-
-
-
-
-
-
-
-
-
-*** netcard
-
-[*] Enable loadable module suppor
-
-[*] Networking support  ---> 
- Networking options
- [*] TCP/IP networking
-
-Device Drivers
- [*] Network device support  ---> 
-Ethernet driver support
-[*]   Realtek devices
-<M>     Realtek 8169 gigabit ethernet support # M4A87TD/USB
-
-01:00.0 Ethernet controller: Realtek Semiconductor Co., Ltd. RTL8111/8168/8411 PCI Express Gigabit Ethernet Controller (rev 06)
-        Subsystem: ASUSTeK Computer Inc. P8P67 and other motherboards
-        Flags: bus master, fast devsel, latency 0, IRQ 29, NUMA node 0
-        I/O ports at c800 [size=256]
-        Memory at d3fff000 (64-bit, prefetchable) [size=4K]
-        Memory at d3ff8000 (64-bit, prefetchable) [size=16K]
-        Capabilities: [40] Power Management version 3
-        Capabilities: [50] MSI: Enable+ Count=1/1 Maskable- 64bit+
-        Capabilities: [70] Express Endpoint, MSI 01
-        Capabilities: [b0] MSI-X: Enable- Count=4 Masked-
-        Capabilities: [d0] Vital Product Data
-        Capabilities: [100] Advanced Error Reporting
-        Capabilities: [140] Virtual Channel
-        Capabilities: [160] Device Serial Number 01-00-00-00-68-4c-e0-00
-        Kernel driver in use: r8169
-        Kernel modules: r8169
-
-
-
-[*]   Atheros devices  
-<M>     Atheros L1C Gigabit Ethernet support  # h77md3h 
-
-Networking support > Wireless
-<*>   cfg80211 - wireless configuration API 
-<M>   Generic IEEE 802.11 Networking Stack (mac80211) 
-
-Device Drivers > Network device support > Wireless LAN 
-[*]   Intersil devices (NEW)  
- <M>     Softmac Prism54 support                                                                                │ │  
-  <M>       Prism54 USB support   
-
-
-
-
-
-
-
-*** cpu tmpfs fs futex eventpoll MULTIUSER
-
-Processor type and features 
-[*] Symmetric multi-processing support
-(4) Maximum number of CPUs 
-[ ] SMT (Hyperthreading) scheduler support (NEW) 
-[*] Multi-core scheduler support (NEW)
-
-File systems > Pseudo filesystems
- <*> Userspace-driven configuration filesystem 
-
-General setup 
- [*] Use full shmem filesystem 
-
-File systems > Pseudo filesystems
-[*] Tmpfs virtual memory file system support (former shm fs)   
- [*]   Tmpfs POSIX Access Control Lists
- -*-   Tmpfs extended attributes                                                                                │ │  
-
-File systems 
- [*] Enable POSIX file locking API    flock() 
- [*] Second extended fs support   
- [*] The Extended 4 (ext4) filesystem 
-
-General setup → Configure standard kernel features (expert users)
-[*]   Enable futex support   
-[*]   Enable eventpoll support 
-
-Networking support > Networking options
- <*> Packet socket                                                                                              
-
-
-
-CONFIG_MULTIUSER=y t
-
-https://github.com/sabotage-linux/sabotage/issues/356
-
-Symbol: MULTIUSER [=n]
-  │ Type  :boolean 
-  │ Prompt: Multiple users, groups and capabilities support    
-
-Location:                                                                                                         │     -> General setup
-  │ (1)   -> Configure standard kernel features (expert users) (EXPERT [=y])
-  │   Defined at init/Kconfig:1392
-  │   Selected by: GRKERNSEC [=n]     
-
-
-*** Smallest Kernel Config
-
-http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2015-edition.html
-
-[*] 64-bit kernel
-
--> General setup
-  -> Configure standard kernel features
-[*] Enable support for printk
-
--> General setup
-[*] Initial RAM filesystem and RAM disk (initramfs/initrd) support
-
-[ ] Embedded system # No
-
-
--> Executable file formats / Emulations
-[*] Kernel support for ELF binaries
-[*] Kernel support for scripts starting with #!
-
--> Device Drivers
-  -> Character devices
-[*] Enable TTY
-
-  -> Serial drivers
-[*] 8250/16550 and compatible serial support
-[*]   Console on 8250/16550 and compatible serial port
-
--> File systems
-  -> Pseudo filesystems
-[*] /proc file system support
-[*] sysfs file system support
-
-
-
-
-
-
-
-
-
-
-*** usb disk kernel
-
-| kernel configuration       |
-|----------------------------|
-| EFI GUID Partition support |
-|                            |
-| Udev                       |
-|                            |
-| PCI                        |
-|                            |
-| SCSI                       |
-|                            |
-| USB                        |
-|                            |
-| piix                       |
-
-
-Enable the block layer > Partition Types 
-
-[*] Advanced partition selection   
- [*]   EFI GUID Partition support (NEW)
-
-https://wiki.archlinux.org/index.php/partitioning#GPT_Kernel_Support
-
-
-
-Bus options 
- [*] PCI support  
-
-[*] Enable the block layer  ---> 
-
-Device Drivers > SCSI device support 
- [*] SCSI device support 
-
- [*] Serial ATA and Parallel ATA drivers (libata) 
-
-  [*]   AHCI SATA support
-  [*]   Platform AHCI SATA support  
-
-
-Symbol: ATA_PIIX [=y]                     
-  │ Type  : tristate                                  
-  │ Prompt: Intel ESB, ICH, PIIX3, PIIX4 PATA/SATA support  │   Location:                                                 
-  │     -> Device  Drivers           
-  │       -> Serial ATA and Parallel ATA drivers (libata) (ATA [=y])
-  │         -> ATA SFF support (for legacy IDE and PATA) (ATA_SFF [=y])                       
-  │ (1)       -> ATA BMDMA support (ATA_BMDMA [=y]) 
-  │   Defined at drivers/ata/Kconfig:260 
-  │   Depends on: ATA [=y] && ATA_SFF [=y] && ATA_BMDMA [=y] && PCI [=y]
-
-
-Device Drivers > USB support
- [*]   Support for Host-side USB  
-
- [*]     xHCI HCD (USB 3.0) support 
- [*]     EHCI HCD (USB 2.0) support 
- [*]     OHCI HCD (USB 1.1) support  
- [*]     USB Mass Storage support
- 
-
-*** udev
-
-| kernel configuration |
-|                      |
-| USE flags            |
-|                      |
-| Emerge               |
-|                      |
-| service              |
-
-
-
-https://wiki.gentoo.org/wiki/Udev
-
-General setup  --->
-    [*] Configure standard kernel features (expert users)  --->
-        [ ] Enable deprecated sysfs features to support old userspace tools
-        [*] Enable signalfd() system call
-Enable the block layer  --->
-    [*] Block layer SG support v4
-Networking support  --->
-    Networking options  --->
-        <*> Unix domain sockets
-Device Drivers  --->
-    Generic Driver Options  --->
-        ()  path to uevent helper
-        [*] Maintain a devtmpfs filesystem to mount at /dev
-    < > ATA/ATAPI/MFM/RLL support (DEPRECATED)  --->
-File systems  --->
-    [*] Inotify support for userspace
-    Pseudo filesystems --->
-        [*] /proc file system support
-        [*] sysfs file system support
-
-
-
-nano /etc/portage/make.conf
-
-USE="udev"
-
-
-proxychains -f /root/proxychains.conf \
-emerge --ask --changed-use --deep @world
-
-rc-update add udev sysinit
 
 
 
@@ -4616,6 +4635,27 @@ rm -rf $w
 
 blkid | grep sdd
 
+[2017-07-19 Wed 17:15]
+
+/dev/sdd2: UUID="7de2564b-e433-4440-8fbb-92924ac0a518" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="4cda7bff-4a09-43ef-96e5-f612322c6582" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+l
+
+cat <<EOF > $w/etc/fstab
+UUID=4cda7bff-4a09-43ef-96e5-f612322c6582  /            ext4    noatime              0 1
+UUID=7de2564b-e433-4440-8fbb-92924ac0a518  /boot        ext2    defaults,noatime     0 2
+
+tmpfs   /var/tmp/portage        tmpfs   uid=portage,gid=portage,mode=775,noatime    0 0
+tmpfs   /tmp         tmpfs   mode=777,noatime          0  0
+
+EOF
+
+cat $w/etc/fstab
+
+
+
 [2017-07-18 Tue 14:40]
 
 /dev/sdd2: UUID="a9323f73-01a3-422b-ba4e-e765534215e6" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
@@ -6131,6 +6171,16 @@ cat <<EOF >  /tmp/stage4.excl
 EOF
 
 cat /tmp/stage4.excl
+
+time nice -10 \
+tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170719_nvidia.tar.xz
+
+  100 %     834.5 MiB / 3,188.6 MiB = 0.262   5.8 MiB/s       9:07             
+
+real    9m8.017s
+user    34m26.359s
+sys     0m7.914s
+
 
 time nice -10 \
 tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170718_nvidia.tar.xz

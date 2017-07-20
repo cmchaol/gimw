@@ -25,6 +25,7 @@
 |------+-----------+----------------------------------------+---------+---------|
 | grub |           | boot                                   |         | v       |
 |      |           |                                        |         |         |
+|      |           | f="/tmp/d-20170720-0930"               |         |         |
 |      |           |                                        |         |         |
 
 
@@ -51,6 +52,8 @@ f="/tmp/d-20170719-1110"
 
 f="/tmp/d-20170719-1115"
 
+f="/tmp/d-20170720-0930"
+
 cp .config $f
 
 cat $f
@@ -74,7 +77,7 @@ KERNELVER=4.8.17-hardened-r2-netcard-usbboot
 
 KERNELVER=4.8.17-hardened-r2-x11
 
-EXTENSION=20170719
+EXTENSION=20170720
 
 cp .config /boot/config-${KERNELVER}-${EXTENSION}
 cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
@@ -4462,7 +4465,7 @@ mkdir $w
 
 *** 20
 
-s=$( ls /tmp/*.tar.* )
+s=$( ls /tmp/*.tar.* )  
 
 echo $s
 
@@ -4472,6 +4475,31 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+[2017-07-20 Thu 09:25]  # /tmp/stage4_20170719_nvidia.tar.xz
+
+
+real    0m43.471s
+user    0m42.578s
+sys     0m9.339s
+
+du -hd1 $w | sort -rh
+
+3.7G    /tmp/wd
+3.5G    /tmp/wd/usr
+60M     /tmp/wd/var
+37M     /tmp/wd/lib64
+10M     /tmp/wd/etc
+9.0M    /tmp/wd/bin
+8.4M    /tmp/wd/boot
+6.2M    /tmp/wd/sbin
+3.1M    /tmp/wd/lib32
+1.1M    /tmp/wd/opt
+12K     /tmp/wd/home
+4.0K    /tmp/wd/root
+
+
+
 
 
 [2017-07-13 Thu 10:25] # kernel
@@ -4627,13 +4655,34 @@ w="/tmp/gentoo"
 
 mkdir $w
 
-rm -rf $w
+#  rm -rf $w
 
 *** 30
 
 # in host, not in chroot
 
 blkid | grep sdd
+
+[2017-07-20 Thu 10:10]
+
+/dev/sdd2: UUID="9e9233f0-be53-42e4-a2c4-ecde0246770f" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="87fa30b2-31ba-47e9-992a-847955a194cf" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+localhost c5766 # 
+
+cat <<EOF > $w/etc/fstab
+UUID=87fa30b2-31ba-47e9-992a-847955a194cf  /            ext4    noatime              0 1
+UUID=9e9233f0-be53-42e4-a2c4-ecde0246770f  /boot        ext2    defaults,noatime     0 2
+
+tmpfs   /var/tmp/portage        tmpfs   uid=portage,gid=portage,mode=775,noatime    0 0
+tmpfs   /tmp         tmpfs   mode=777,noatime          0  0
+
+EOF
+
+cat $w/etc/fstab
+
+
 
 [2017-07-19 Wed 17:15]
 
@@ -4790,6 +4839,8 @@ mount /dev/sdb2 $w/boot
 
 s=$( ls /tmp/*.tar.* )
 
+s=$( ls /tmp/wd/tmp/*.tar.* )
+
 echo $s
 
 
@@ -4799,6 +4850,35 @@ $s \
 -C $w \
 --xattrs
 
+
+[2017-07-20 Thu 10:05]  # /tmp/wd/tmp/stage4_20170720_nvidia.tar.xz
+
+real    15m44.457s
+user    0m43.207s
+sys     0m14.088s
+
+du -hd1 $w | sort -rh
+3.1G    /tmp/gentoo
+3.0G    /tmp/gentoo/usr
+36M     /tmp/gentoo/lib64
+32M     /tmp/gentoo/var
+13M     /tmp/gentoo/boot
+8.9M    /tmp/gentoo/etc
+8.9M    /tmp/gentoo/bin
+6.0M    /tmp/gentoo/sbin
+3.1M    /tmp/gentoo/lib32
+1.1M    /tmp/gentoo/opt
+12K     /tmp/gentoo/lost+found
+6.0K    /tmp/gentoo/home
+4.0K    /tmp/gentoo/root
+2.0K    /tmp/gentoo/run
+1.0K    /tmp/gentoo/tmp
+1.0K    /tmp/gentoo/sys
+1.0K    /tmp/gentoo/proc
+1.0K    /tmp/gentoo/mnt
+1.0K    /tmp/gentoo/media
+1.0K    /tmp/gentoo/dev
+localhost c5766 # 
 
 [2017-07-18 Tue 08:06]  # nvidia
 
@@ -6171,6 +6251,13 @@ cat <<EOF >  /tmp/stage4.excl
 EOF
 
 cat /tmp/stage4.excl
+
+time nice -10 \
+tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170720_nvidia.tar.xz
+
+
+
+
 
 time nice -10 \
 tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170719_nvidia.tar.xz

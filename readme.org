@@ -4778,6 +4778,8 @@ Exit the VM by hitting Ctl-a c then typing “quit” at the qemu monitor shell.
 |    |                   |
 | 50 | grub              |
 |    |                   |
+| 70 | passwd, useradd   |
+|    |                   |
 | 80 | qemu              |
 
 # working direcxtory
@@ -4805,6 +4807,29 @@ useradd -m -G users,wheel,audio,usb,video
 # in host, not in chroot
 
 blkid | grep sdd
+
+[2017-07-21 Fri 10:17]
+
+
+/dev/sdd2: UUID="3684de38-9e2f-4d51-b235-09ae283dbd4d" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="deb44988-18e0-4ba7-a4c2-73791e32cbb7" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+
+
+cat <<EOF > $w/etc/fstab
+UUID=deb44988-18e0-4ba7-a4c2-73791e32cbb7  /            ext4    noatime              0 1
+UUID=3684de38-9e2f-4d51-b235-09ae283dbd4d  /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
 
 [2017-07-20 Thu 10:10]
 
@@ -4912,6 +4937,8 @@ mkdir /var/tmp/portage
 mount -o size=90%,noatime,nodiratime,uid=portage,gid=portage,mode=775 -t tmpfs tmpfs /var/tmp/portage 
 
 
+
+
 exit
 cd
 
@@ -4992,6 +5019,22 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+[2017-07-21 Fri 10:06] # stage4_20170721_grub_proxychains_kernel_nvidia.tar.xz
+
+real    4m26.215s
+user    0m29.111s
+sys     0m11.571s
+
+2.3G    /tmp/gentoo/usr
+2.3G    /tmp/gentoo
+21M     /tmp/gentoo/var
+20M     /tmp/gentoo/lib64
+8.9M    /tmp/gentoo/bin
+8.7M    /tmp/gentoo/etc
+6.0M    /tmp/gentoo/sbin
+4.3M    /tmp/gentoo/boot
+3.1M    /tmp/gentoo/lib32
 
 
 [2017-07-20 Thu 10:05]  # /tmp/wd/tmp/stage4_20170720_nvidia.tar.xz
@@ -6398,6 +6441,9 @@ cat /tmp/stage4.excl
 time nice -10 \
 tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170721_grub_proxychains_kernel_nvidia.tar.xz
 
+real    6m45.472s
+user    24m37.160s
+sys     0m6.375s
 
 
 

@@ -25,9 +25,9 @@
 |--------------------------+------+-------------------------------------+-----------+-------------+---------|
 | f="/tmp/d-20170721-0940" | x11  | f="/tmp/d-20170719-1115"            |           |             |         |
 | v                        |      |                                     | v         |             |         |
-|                          |      |                                     |           | v           |         |
+| v                        |      |                                     |           | v           |         |
 |--------------------------+------+-------------------------------------+-----------+-------------+---------|
-|                          |      |                                     |           | proxychains |         |
+| v                        |      |                                     |           | proxychains |         |
 |--------------------------+------+-------------------------------------+-----------+-------------+---------|
 |                          | grub | boot                                |           |             |         |
 | v                        |      |                                     |           | v           |         |
@@ -416,6 +416,9 @@ x11-base/xorg-server
 |   |   | 3 |   |   | Nouveau (nVidia) cards                    | blank     |           |              |
 |   |   |   |   |   |                                           |           |           |              |
 
+ *   CONFIG_ZONE_DMA:    is not set when it should be.
+ *   CONFIG_SYSVIPC:     is not set when it should be.
+
 reference
 
 
@@ -535,6 +538,12 @@ emerge x11-drivers/nvidia-drivers  --autounmask-write
 
 dispatch-conf
 
+ *   CONFIG_ZONE_DMA:    is not set when it should be.
+ *   CONFIG_SYSVIPC:     is not set when it should be.
+ * Please check to make sure these options are set correctly.
+ * Failure to do so may cause unexpected problems.
+ *   CONFIG_ZONE_DMA:    is not set when it should be.
+ *   CONFIG_SYSVIPC:     is not set when it should be.
 
 
 
@@ -557,6 +566,21 @@ emerge x11-drivers/nvidia-drivers
 proxychains -f /root/proxychains.conf \
 emerge @module-rebuild
 
+
+emerge -pv x11-drivers/nvidia-drivers
+
+!!! All ebuilds that could satisfy ">=x11-libs/cairo-1.12.14-r4:=[X?,abi_x86_32(-)?,abi_x86_64(-)?,abi_x86_x32(-)?,abi_mips_n32(-)?,abi_mips_n64(-)?,abi_mips_o32(-)?,abi_ppc_32(-)?,abi_ppc_64(-)?,abi_s390_32(-)?,abi_s390_64(-)?]" have been masked.
+!!! One of the following masked packages is required to complete your request:
+- x11-libs/cairo-9999::gentoo (masked by: missing keyword)
+- x11-libs/cairo-1.14.10::gentoo (masked by: ~amd64 keyword)
+- x11-libs/cairo-1.14.8::gentoo (masked by: )
+
+(dependency required by "x11-libs/pango-1.40.6::gentoo" [ebuild])
+(dependency required by "x11-libs/gtk+-2.24.31-r1::gentoo" [ebuild])
+(dependency required by "x11-drivers/nvidia-drivers-381.22::gentoo[tools]" [ebuild])
+(dependency required by "x11-drivers/nvidia-drivers" [argument])
+For more information, see the MASKED PACKAGES section in the emerge
+man page or refer to the Gentoo Handbook.
 
 
 
@@ -4586,6 +4610,27 @@ $s \
 -C $w \
 --xattrs
 
+[2017-07-21 Fri 10:41]  # /tmp/stage4_20170721_grub_proxychains_kernel_nvidia.tar.xz
+
+real    0m29.129s
+user    0m28.852s
+sys     0m7.357s
+
+
+du -hd1 $w | sort -rh
+
+2.8G    /tmp/wd/usr
+2.8G    /tmp/wd
+37M     /tmp/wd/var
+20M     /tmp/wd/lib64
+9.6M    /tmp/wd/etc
+9.0M    /tmp/wd/bin
+6.2M    /tmp/wd/sbin
+4.3M    /tmp/wd/boot
+3.1M    /tmp/wd/lib32
+
+
+
 [2017-07-21 Fri 09:06] # /tmp/stage4_20170720_proxychains_kernel.tar.xz
 
 real    0m26.721s
@@ -4808,6 +4853,26 @@ useradd -m -G users,wheel,audio,usb,video
 
 blkid | grep sdd
 
+[2017-07-21 Fri 17:26]
+
+/dev/sdd2: UUID="df15295a-5c15-4f24-8d00-ef2e29e1540e" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="a5651c9d-9e6c-4b7d-8d95-1715f9153dd9" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+cat <<EOF > $w/etc/fstab
+UUID=a5651c9d-9e6c-4b7d-8d95-1715f9153dd9  /            ext4    noatime              0 1
+UUID=df15295a-5c15-4f24-8d00-ef2e29e1540e  /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
+
 [2017-07-21 Fri 10:17]
 
 
@@ -5019,6 +5084,27 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+[2017-07-21 Fri 17:05]  # /tmp/stage4_20170721_grub_proxychains_kernel_nvidia_X.tar.xz
+
+real    16m29.241s
+user    0m43.491s
+sys     0m14.129s
+
+3.2G    /tmp/gentoo
+3.1G    /tmp/gentoo/usr
+36M     /tmp/gentoo/lib64
+32M     /tmp/gentoo/var
+8.9M    /tmp/gentoo/etc
+8.9M    /tmp/gentoo/bin
+6.0M    /tmp/gentoo/sbin
+4.3M    /tmp/gentoo/boot
+3.1M    /tmp/gentoo/lib32
+1.1M    /tmp/gentoo/opt
+
+
+
+
 
 [2017-07-21 Fri 10:06] # stage4_20170721_grub_proxychains_kernel_nvidia.tar.xz
 
@@ -6437,6 +6523,17 @@ cat <<EOF >  /tmp/stage4.excl
 EOF
 
 cat /tmp/stage4.excl
+
+time nice -10 \
+tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170721_grub_proxychains_kernel_nvidia_X.tar.xz
+
+  100 %     830.1 MiB / 3,274.0 MiB = 0.254   5.3 MiB/s      10:13             
+
+real    10m13.384s
+user    34m54.751s
+sys     0m8.156s
+
+
 
 time nice -10 \
 tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170721_grub_proxychains_kernel_nvidia.tar.xz

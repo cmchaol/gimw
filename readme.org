@@ -2,6 +2,59 @@
 
 ** kernel and package build
 
+*** concepts [2017-07-21 Fri 09:04]
+
+| [2017-07-21 Fri 09:04]   |      | kernel configuration                | make.conf | portage     | service |
+|--------------------------+------+-------------------------------------+-----------+-------------+---------|
+| f="/tmp/d-20170721-0915" |      | Smallest Kernel Config              |           |             |         |
+|                          |      | f="/tmp/d-20170719-1040"            |           |             |         |
+|                          |      |                                     |           |             |         |
+| f="/tmp/d-20170721-0920" |      | cpu tmpfs futex eventpoll MULTIUSER |           |             |         |
+|                          |      | f="/tmp/d-20170719-1050"            |           |             |         |
+|                          |      |                                     |           |             |         |
+|                          |      | usb disk fs                         |           |             |         |
+| f="/tmp/d-20170721-0925" |      | f="/tmp/d-20170719-1055"            |           |             |         |
+|                          |      |                                     |           |             |         |
+| f="/tmp/d-20170721-0930" |      | netcards                            |           |             |         |
+|                          |      | f="/tmp/d-20170719-1100"            |           |             |         |
+|--------------------------+------+-------------------------------------+-----------+-------------+---------|
+| f="/tmp/d-20170721-0935" | udev | f="/tmp/d-20170719-1110"            |           |             |         |
+| v                        |      |                                     | v         |             |         |
+| v                        |      |                                     |           | v           |         |
+| v                        |      |                                     |           |             | v       |
+|--------------------------+------+-------------------------------------+-----------+-------------+---------|
+| f="/tmp/d-20170721-0940" | x11  | f="/tmp/d-20170719-1115"            |           |             |         |
+| v                        |      |                                     | v         |             |         |
+|                          |      |                                     |           | v           |         |
+|--------------------------+------+-------------------------------------+-----------+-------------+---------|
+|                          |      |                                     |           | proxychains |         |
+|--------------------------+------+-------------------------------------+-----------+-------------+---------|
+|                          | grub | boot                                |           |             |         |
+| v                        |      |                                     |           | v           |         |
+|                          |      | f="/tmp/d-20170720-0930"            |           |             |         |
+|                          |      |                                     |           |             |         |
+
+
+f="/tmp/d-20170720-0930"
+
+f="/tmp/d-20170721-0915"
+
+f="/tmp/d-20170721-0920"
+
+f="/tmp/d-20170721-0925"
+
+f="/tmp/d-20170721-0930"
+
+f="/tmp/d-20170721-0935"
+
+f="/tmp/d-20170721-09405"
+
+cp .config $f
+
+
+make menuconfig
+
+
 *** concepts
 
 |      | make.conf | kernel configuration                   | service | portage |
@@ -70,21 +123,22 @@ make KCONFIG_ALLCONFIG=$f alldefconfig
 time nice -10 \
 make -j 6 && make modules_install
 
-
-
-KERNELVER=4.8.17-hardened-r2-netcard-usbboot
+real    2m58.810s
+user    10m25.983s
+sys     0m42.895s
 
 
 KERNELVER=4.8.17-hardened-r2-x11
 
-EXTENSION=20170720
+EXTENSION=20170721
 
 cp .config /boot/config-${KERNELVER}-${EXTENSION}
 cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
 cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
 cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
 
-/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
+# executes in usb, failed in tmpfs
+/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    
 
 
 
@@ -128,7 +182,7 @@ http://mgalgs.github.io/2015/05/16/how-to-build-a-custom-linux-kernel-for-qemu-2
 
 
 
-*** cpu tmpfs fs futex eventpoll MULTIUSER
+*** cpu tmpfs futex eventpoll MULTIUSER
 
 Processor type and features 
 [*] Symmetric multi-processing support
@@ -149,8 +203,6 @@ File systems > Pseudo filesystems
 
 File systems 
  [*] Enable POSIX file locking API    flock() 
- [*] Second extended fs support   
- [*] The Extended 4 (ext4) filesystem 
 
 General setup → Configure standard kernel features (expert users)
 [*]   Multiple users, groups and capabilities support 
@@ -162,7 +214,7 @@ Networking support > Networking options
  <*> Packet socket                                                                                              
 
 
-*** usb disk kernel
+*** usb disk fs
 
 | kernel configuration       |
 |----------------------------|
@@ -192,6 +244,11 @@ Bus options
  [*] PCI support  
 
 [*] Enable the block layer  ---> 
+
+File systems 
+ [*] Second extended fs support   
+ [*] The Extended 4 (ext4) filesystem 
+
 
 Device Drivers > SCSI device support 
  [*] SCSI device support 
@@ -297,13 +354,18 @@ File systems  --->
 
 nano /etc/portage/make.conf
 
+
 cat /etc/portage/make.conf | grep USE
+
+
+sed -i 's/USE="/USE="udev /g' /etc/portage/make.conf 
+
 
 USE="udev"
 
 
 proxychains -f /root/proxychains.conf \
-emerge --ask --changed-use --deep @world
+emerge --changed-use --deep @world
 
 rc-update add udev sysinit
 
@@ -373,11 +435,48 @@ https://forums.gentoo.org/viewtopic-p-6655021.html
 
 
 
-pm="$wy/etc/portage/make.conf"
+pm="/etc/portage/make.conf"
 
 cat $pm
 
-sed -i 's/nouveau/nvidia/g' $pm
+# sed -i 's/nouveau/nvidia/g' $pm
+
+cat <<EOF >> $pm
+
+MAKEOPTS="-j5"
+PORTAGE_NICENESS=10
+
+GENTOO_MIRRORS="http://ftp.twaren.net/Linux/Gentoo/ http://ftp.jaist.ac.jp/pub/Linux/Gentoo/ http://ftp.iij.ad.jp/pub/linux/gentoo/"
+
+INPUT_DEVICES="evdev"
+
+VIDEO_CARDS="nvidia intel i915"
+# VIDEO_CARDS="nouveau"
+
+PAX_MARKINGS="XT" 
+
+EOF
+
+
+sed -i 's/USE="/USE="xattr /' /etc/portage/make.conf
+
+
+
+
+mkdir /etc/portage/repos.conf
+
+cp /usr/share/portage/config/repos.conf /etc/portage/repos.conf/gentoo.conf
+
+
+sed -i 's/rsync.gentoo/rsync.tw.gentoo/' /etc/portage/repos.conf/gentoo.conf
+
+sed  '' /etc/portage/repos.conf/gentoo.conf
+
+
+cp -L /etc/resolv.conf /tmp/wy/etc/
+
+cp proxychains.conf /tmp/wy/root
+
 
 
 
@@ -460,6 +559,17 @@ emerge @module-rebuild
 
 
 
+
+
+*** proxychains grub 
+
+emerge proxychains
+
+proxychains -f /root/proxychains.conf bash
+
+
+proxychains -f /root/proxychains.conf \
+emerge grub
 
 
 ** savedefconfig alldefconfig
@@ -4476,6 +4586,26 @@ $s \
 -C $w \
 --xattrs
 
+[2017-07-21 Fri 09:06] # /tmp/stage4_20170720_proxychains_kernel.tar.xz
+
+real    0m26.721s
+user    0m26.415s
+sys     0m6.973s
+
+du -hd1 $w | sort -rh
+
+
+2.6G    /tmp/wd
+2.5G    /tmp/wd/usr
+36M     /tmp/wd/var
+17M     /tmp/wd/lib64
+9.6M    /tmp/wd/etc
+9.0M    /tmp/wd/bin
+6.2M    /tmp/wd/sbin
+3.1M    /tmp/wd/lib32
+
+
+
 [2017-07-20 Thu 09:25]  # /tmp/stage4_20170719_nvidia.tar.xz
 
 
@@ -4656,6 +4786,19 @@ w="/tmp/gentoo"
 mkdir $w
 
 #  rm -rf $w
+
+*** 70
+
+passwd
+
+useradd -m -G users,wheel,audio,usb,video 
+
+
+
+
+
+
+
 
 *** 30
 
@@ -6253,7 +6396,7 @@ EOF
 cat /tmp/stage4.excl
 
 time nice -10 \
-tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170720_nvidia.tar.xz
+tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170721_grub_proxychains_kernel_nvidia.tar.xz
 
 
 
@@ -7679,6 +7822,7 @@ useradd -m -G users,wheel,audio,usb,video user1
 
 passwd user1
 
+proxychains -f /root/proxychains.conf \
 emerge grub
 
 

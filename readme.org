@@ -1,11 +1,5 @@
 * scenarios
 
-** Weston 
-
-https://wiki.gentoo.org/wiki/Weston
-
-
-
 ** kernel and package build
 
 *** Weston
@@ -685,6 +679,37 @@ proxychains -f /root/proxychains.conf bash
 
 proxychains -f /root/proxychains.conf \
 emerge grub
+
+
+*** Weston 
+
+https://wiki.gentoo.org/wiki/Weston
+
+https://wiki.archlinux.org/index.php/Wayland
+
+
+emerge --ask dev-libs/weston
+
+
+pm="/etc/portage/make.conf"
+
+cat $pm
+
+sed -i 's/USE="/USE="wayland /' $pm
+
+
+proxychains -f /root/proxychains.conf \
+emerge --ask --changed-use --deep @world
+
+
+
+echo "dev-libs/weston examples xwayland " > /etc/portage/package.use/weston
+
+cat /etc/portage/package.use/weston
+
+
+proxychains -f /root/proxychains.conf \
+emerge --ask dev-libs/weston
 
 
 ** savedefconfig alldefconfig
@@ -4701,12 +4726,6 @@ $s \
 -C $w \
 --xattrs
 
-real    0m31.095s
-user    0m30.704s
-sys     0m2.393s
-
-
-
 p=$( ls /tmp/port* )  
 
 echo $p
@@ -4718,6 +4737,25 @@ $p \
 -C $w/usr \
 --xattrs
 
+
+[2017-07-24 Mon 16:16]  stage4_20170724_proxychains_grub_kernel.tar.xz
+
+real    0m29.371s
+user    0m29.144s
+sys     0m7.354s
+
+
+du -hd1 $w | sort -rh
+
+2.8G    /tmp/wd/usr
+2.8G    /tmp/wd
+37M     /tmp/wd/var
+20M     /tmp/wd/lib64
+9.6M    /tmp/wd/etc
+9.0M    /tmp/wd/bin
+8.7M    /tmp/wd/boot
+6.2M    /tmp/wd/sbin
+3.1M    /tmp/wd/lib32
 
 
 
@@ -4972,9 +5010,12 @@ mkdir $w
 
 *** 70
 
+chown root /usr/bin/weston-launch
+chmod +s /usr/bin/weston-launch
+
 passwd
 
-useradd -m -G users,wheel,audio,usb,video 
+useradd -m -G users,wheel,audio,usb,video,weston-launch
 
 
 
@@ -5132,6 +5173,13 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+
+
+[2017-07-24 Mon 17:39]  /tmp/stage4_20170724_proxychains_grub_kernel_weston.tar.xz
+
+
+
 
 [2017-07-24 Mon 15:21]  stage4_20170724_proxychains_grub_kernel.tar.xz
 
@@ -6585,6 +6633,16 @@ cat <<EOF >  /tmp/stage4.excl
 EOF
 
 cat /tmp/stage4.excl
+
+time nice -10 \
+tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170724_proxychains_grub_kernel_weston.tar.xz
+
+real    8m9.141s
+user    28m34.817s
+sys     0m7.395s
+
+
+
 
 time nice -10 \
 tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170724_proxychains_grub_kernel.tar.xz

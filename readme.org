@@ -26,6 +26,9 @@
 | f="/tmp/d-20170721-0940" | x11  | f="/tmp/d-20170719-1115"            |           |             |         |
 | v                        |      |                                     | v         |             |         |
 | v                        |      |                                     |           | v           |         |
+|                          |      |                                     |           |             |         |
+| f="/tmp/d-20170724-0810" |      | libinput                            | libinput  |             |         |
+|                          |      |                                     |           |             |         |
 |--------------------------+------+-------------------------------------+-----------+-------------+---------|
 | v                        |      |                                     |           | proxychains |         |
 |--------------------------+------+-------------------------------------+-----------+-------------+---------|
@@ -48,6 +51,8 @@ f="/tmp/d-20170721-0930"
 f="/tmp/d-20170721-0935"
 
 f="/tmp/d-20170721-09405"
+
+f="/tmp/d-20170724-0810"
 
 cp .config $f
 
@@ -130,7 +135,7 @@ sys     0m42.895s
 
 KERNELVER=4.8.17-hardened-r2-x11
 
-EXTENSION=20170721
+EXTENSION=20170724
 
 cp .config /boot/config-${KERNELVER}-${EXTENSION}
 cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
@@ -380,6 +385,8 @@ x11-base/xorg-server
 | v |   |   |   |   | Device Drivers                            |           |           |              |
 |   | v |   |   |   | Input device support                      |           |           |              |
 |   |   | v |   |   | Event interface                           | *         |           |              |
+|   |   |   |   |   |                                           |           |           | 4            |
+|   |   |   |   |   |                                           |           |           |              |
 |---+---+---+---+---+-------------------------------------------+-----------+-----------+--------------|
 |   |   |   |   |   |                                           |           |           |              |
 |   | v |   |   |   | Graphics support                          |           |           |              |
@@ -414,7 +421,18 @@ x11-base/xorg-server
 |   |   | 3 |   |   | /dev/agpgart (AGP Support)                |           |           |              |
 |   |   |   |   |   |                                           |           |           |              |
 |   |   | 3 |   |   | Nouveau (nVidia) cards                    | blank     |           |              |
+|---+---+---+---+---+-------------------------------------------+-----------+-----------+--------------|
 |   |   |   |   |   |                                           |           |           |              |
+
+Processor type and features
+ [*] DMA memory allocation support    
+
+General setup
+ [*] System V IPC 
+
+General setup → Configure standard kernel features (expert users)
+ [*]   Enable timerfd() system call 
+
 
  *   CONFIG_ZONE_DMA:    is not set when it should be.
  *   CONFIG_SYSVIPC:     is not set when it should be.
@@ -451,7 +469,8 @@ PORTAGE_NICENESS=10
 
 GENTOO_MIRRORS="http://ftp.twaren.net/Linux/Gentoo/ http://ftp.jaist.ac.jp/pub/Linux/Gentoo/ http://ftp.iij.ad.jp/pub/linux/gentoo/"
 
-INPUT_DEVICES="evdev"
+INPUT_DEVICES="libinput"
+# INPUT_DEVICES="evdev"
 
 VIDEO_CARDS="nvidia intel i915"
 # VIDEO_CARDS="nouveau"
@@ -463,6 +482,7 @@ EOF
 
 sed -i 's/USE="/USE="xattr /' /etc/portage/make.conf
 
+sed -i 's/INPUT_DEVICES="evdev"/INPUT_DEVICES="libinput"/' /etc/portage/make.conf
 
 
 
@@ -482,8 +502,8 @@ cp proxychains.conf /tmp/wy/root
 
 
 
-
-
+proxychains -f /root/proxychains.conf \
+emerge --ask --changed-use --deep @world
 
 
 emerge -pv xorg-drivers 
@@ -550,6 +570,7 @@ dispatch-conf
 proxychains -f /root/proxychains.conf \
 emerge --ask --changed-use --deep @world
 
+ CONFIG_TIMERFD:     is not set when it should be.
 
 
 
@@ -4610,6 +4631,29 @@ $s \
 -C $w \
 --xattrs
 
+
+[2017-07-24 Mon 07:58]  # /tmp/stage4_20170721_grub_proxychains_kernel_nvidia_X.tar.xz
+
+real    0m43.113s
+user    0m42.308s
+sys     0m9.381s
+
+du -hd1 $w | sort -rh
+
+3.8G    /tmp/wd
+3.6G    /tmp/wd/usr
+58M     /tmp/wd/var
+37M     /tmp/wd/lib64
+10M     /tmp/wd/etc
+9.0M    /tmp/wd/bin
+6.2M    /tmp/wd/sbin
+4.3M    /tmp/wd/boot
+3.1M    /tmp/wd/lib32
+1.1M    /tmp/wd/opt
+
+
+
+
 [2017-07-21 Fri 10:41]  # /tmp/stage4_20170721_grub_proxychains_kernel_nvidia.tar.xz
 
 real    0m29.129s
@@ -4853,6 +4897,26 @@ useradd -m -G users,wheel,audio,usb,video
 
 blkid | grep sdd
 
+[2017-07-24 Mon 08:58]
+
+/dev/sdd2: UUID="fedf8485-1557-49e6-9ec5-57c835468a2c" TYPE="ext2" PARTLABEL="boot" PARTUUID="6af13b38-807c-4f05-9485-51b3414ba211"
+/dev/sdd4: UUID="0c523eeb-807d-480d-9374-65ccb0d79f8e" TYPE="ext4" PARTLABEL="fs2" PARTUUID="f2c7e124-43c8-4d46-b24e-340c0cb876e9"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="1ecba64d-0ac4-4eaa-9434-b74631d723c5"
+/dev/sdd3: UUID="994231e5-a5b4-4888-9257-63e740d66cd7" TYPE="ext4" PARTLABEL="fs1" PARTUUID="78c3ed38-4b23-4b9f-9558-f8110e30aef7"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=0c523eeb-807d-480d-9374-65ccb0d79f8e  /            ext4    noatime              0 1
+UUID=fedf8485-1557-49e6-9ec5-57c835468a2c  /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
 [2017-07-21 Fri 17:26]
 
 /dev/sdd2: UUID="df15295a-5c15-4f24-8d00-ef2e29e1540e" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
@@ -5084,6 +5148,14 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+[2017-07-24 Mon 08:39]
+
+real    17m49.087s
+user    0m43.354s
+sys     0m14.106s
+
+
 
 [2017-07-21 Fri 17:05]  # /tmp/stage4_20170721_grub_proxychains_kernel_nvidia_X.tar.xz
 
@@ -6525,7 +6597,14 @@ EOF
 cat /tmp/stage4.excl
 
 time nice -10 \
-tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170721_grub_proxychains_kernel_nvidia_X.tar.xz
+tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170724_grub_proxychains_kernel_nvidia_X.tar.xz
+
+real    9m9.699s
+user    35m16.578s
+sys     0m7.996s
+
+
+
 
   100 %     830.1 MiB / 3,274.0 MiB = 0.254   5.3 MiB/s      10:13             
 

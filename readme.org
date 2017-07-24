@@ -379,50 +379,49 @@ rc-update add udev sysinit
 
 x11-base/xorg-server
 
-| 1 | 2 | 3 | 4 | 5 | kernel option                             | defconfig | change to | reference    |
-|   |   |   |   |   |                                           |           |           |              |
-|---+---+---+---+---+-------------------------------------------+-----------+-----------+--------------|
-| v |   |   |   |   | Device Drivers                            |           |           |              |
-|   | v |   |   |   | Input device support                      |           |           |              |
-|   |   | v |   |   | Event interface                           | *         |           |              |
-|   |   |   |   |   |                                           |           |           | 4            |
-|   |   |   |   |   |                                           |           |           |              |
-|---+---+---+---+---+-------------------------------------------+-----------+-----------+--------------|
-|   |   |   |   |   |                                           |           |           |              |
-|   | v |   |   |   | Graphics support                          |           |           |              |
-|   |   | v |   |   | Frame buffer Devices                      |           |           |              |
-|   |   |   | v |   | Support for frame buffer devices          |           |           |              |
-|   |   |   |   | v | Enable firmware EDID                      | none      |           | keep it none |
-|---+---+---+---+---+-------------------------------------------+-----------+-----------+--------------|
-|   |   |   |   |   |                                           |           |           |              |
-|   |   | v |   |   | Console display driver support            |           |           |              |
-|   |   |   | v |   | Framebuffer Console support               | *         |           |              |
-|   |   |   |   |   |                                           |           |           |              |
-|---+---+---+---+---+-------------------------------------------+-----------+-----------+--------------|
-|   |   |   |   |   |                                           |           |           |              |
-|   |   | v |   |   | Direct Rendering Manager (XFree86         |           |           |              |
-|   |   |   | v |   | Enable legacy fbdev support for           | *         |           | 2            |
-|---+---+---+---+---+-------------------------------------------+-----------+-----------+--------------|
-|   |   |   |   |   |                                           |           |           |              |
-|   |   | v |   |   | Nouveau (NVIDIA) cards                    | none      | M         |              |
-|   |   |   |   |   |                                           |           | *         |              |
-|   |   | v |   |   | Intel 8xx/9xx/G3x/G4x/HD Graphics         |           | M         | h77md3h      |
-|---+---+---+---+---+-------------------------------------------+-----------+-----------+--------------|
-|   |   |   |   |   |                                           |           |           |              |
-|   |   |   |   |   | NVidia/nvidia-drivers                     |           |           |              |
-|   |   |   |   |   |                                           |           |           |              |
-| 1 |   |   |   |   | Enable loadable module support            |           |           |              |
-|   |   |   |   |   |                                           |           |           |              |
-| 1 |   |   |   |   | Processor type and features               |           |           |              |
-|   | 2 |   |   |   | MTRR (Memory Type Range Register) support | *         |           |              |
-|   |   |   |   |   |                                           |           |           |              |
-| 1 |   |   |   |   | Device Drivers                            |           |           |              |
-|   | 2 |   |   |   | Graphics support                          |           |           |              |
-|   |   | 3 |   |   | /dev/agpgart (AGP Support)                |           |           |              |
-|   |   |   |   |   |                                           |           |           |              |
-|   |   | 3 |   |   | Nouveau (nVidia) cards                    | blank     |           |              |
-|---+---+---+---+---+-------------------------------------------+-----------+-----------+--------------|
-|   |   |   |   |   |                                           |           |           |              |
+| 1 | 2 | 3 | 4 | 5 | kernel option                              | defconfig | change to | reference    |
+|   |   |   |   |   |                                            |           |           |              |
+|---+---+---+---+---+--------------------------------------------+-----------+-----------+--------------|
+| v |   |   |   |   | Device Drivers                             |           |           |              |
+|   | v |   |   |   | Input device support                       |           |           |              |
+|   |   | v |   |   | Event interface slowly (deprecating evdev) | *         |           |              |
+|   |   |   |   |   |                                            |           |           | 4            |
+|---+---+---+---+---+--------------------------------------------+-----------+-----------+--------------|
+|   |   |   |   |   |                                            |           |           |              |
+|   | v |   |   |   | Graphics support                           |           |           |              |
+|   |   | v |   |   | Frame buffer Devices                       |           |           |              |
+|   |   |   | v |   | Support for frame buffer devices           |           |           |              |
+|   |   |   |   | v | Enable firmware EDID                       | none      |           | keep it none |
+|---+---+---+---+---+--------------------------------------------+-----------+-----------+--------------|
+|   |   |   |   |   |                                            |           |           |              |
+|   |   | v |   |   | Console display driver support             |           |           |              |
+|   |   |   | v |   | Framebuffer Console support                | *         |           |              |
+|   |   |   |   |   |                                            |           |           |              |
+|---+---+---+---+---+--------------------------------------------+-----------+-----------+--------------|
+|   |   |   |   |   |                                            |           |           |              |
+|   |   | v |   |   | Direct Rendering Manager (XFree86          |           |           |              |
+|   |   |   | v |   | Enable legacy fbdev support for            | *         |           | 2            |
+|---+---+---+---+---+--------------------------------------------+-----------+-----------+--------------|
+|   |   |   |   |   |                                            |           |           |              |
+|   |   | v |   |   | Nouveau (NVIDIA) cards                     | none      | M         |              |
+|   |   |   |   |   |                                            |           | *         |              |
+|   |   | v |   |   | Intel 8xx/9xx/G3x/G4x/HD Graphics          |           | M         | h77md3h      |
+|---+---+---+---+---+--------------------------------------------+-----------+-----------+--------------|
+|   |   |   |   |   |                                            |           |           |              |
+|   |   |   |   |   | NVidia/nvidia-drivers                      |           |           |              |
+|   |   |   |   |   |                                            |           |           |              |
+| 1 |   |   |   |   | Enable loadable module support             |           |           |              |
+|   |   |   |   |   |                                            |           |           |              |
+| 1 |   |   |   |   | Processor type and features                |           |           |              |
+|   | 2 |   |   |   | MTRR (Memory Type Range Register) support  | *         |           |              |
+|   |   |   |   |   |                                            |           |           |              |
+| 1 |   |   |   |   | Device Drivers                             |           |           |              |
+|   | 2 |   |   |   | Graphics support                           |           |           |              |
+|   |   | 3 |   |   | /dev/agpgart (AGP Support)                 |           |           |              |
+|   |   |   |   |   |                                            |           |           |              |
+|   |   | 3 |   |   | Nouveau (nVidia) cards                     | blank     |           |              |
+|---+---+---+---+---+--------------------------------------------+-----------+-----------+--------------|
+|   |   |   |   |   |                                            |           |           |              |
 
 Processor type and features
  [*] DMA memory allocation support    
@@ -453,6 +452,13 @@ https://wiki.gentoo.org/wiki/Nouveau
 3
 
 https://forums.gentoo.org/viewtopic-p-6655021.html
+
+
+4
+
+https://wiki.gentoo.org/wiki/Libinput
+
+emerge --ask --depclean
 
 
 

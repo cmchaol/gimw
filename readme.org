@@ -52,38 +52,38 @@ make menuconfig
 
 *** concepts [2017-07-21 Fri 09:04]
 
-| [2017-07-21 Fri 09:04]   |      | kernel configuration                | make.conf | portage     | service |
-|--------------------------+------+-------------------------------------+-----------+-------------+---------|
-| f="/tmp/d-20170721-0915" |      | Smallest Kernel Config              |           |             |         |
-|                          |      | f="/tmp/d-20170719-1040"            |           |             |         |
-|                          |      |                                     |           |             |         |
-| f="/tmp/d-20170721-0920" |      | cpu tmpfs futex eventpoll MULTIUSER |           |             |         |
-|                          |      | f="/tmp/d-20170719-1050"            |           |             |         |
-|                          |      |                                     |           |             |         |
-|                          |      | usb disk fs                         |           |             |         |
-| f="/tmp/d-20170721-0925" |      | f="/tmp/d-20170719-1055"            |           |             |         |
-|                          |      |                                     |           |             |         |
-| f="/tmp/d-20170721-0930" |      | netcards                            |           |             |         |
-|                          |      | f="/tmp/d-20170719-1100"            |           |             |         |
-|--------------------------+------+-------------------------------------+-----------+-------------+---------|
-| f="/tmp/d-20170721-0935" | udev | f="/tmp/d-20170719-1110"            |           |             |         |
-| v                        |      |                                     | v         |             |         |
-| v                        |      |                                     |           | v           |         |
-| v                        |      |                                     |           |             | v       |
-|--------------------------+------+-------------------------------------+-----------+-------------+---------|
-| f="/tmp/d-20170721-0940" | x11  | f="/tmp/d-20170719-1115"            |           |             |         |
-| v                        |      |                                     | v         |             |         |
-| v                        |      |                                     |           | v           |         |
-|                          |      |                                     |           |             |         |
-| f="/tmp/d-20170724-0810" |      | libinput                            | libinput  |             |         |
-|                          |      |                                     |           |             |         |
-|--------------------------+------+-------------------------------------+-----------+-------------+---------|
-| v                        |      |                                     |           | proxychains |         |
-|--------------------------+------+-------------------------------------+-----------+-------------+---------|
-|                          | grub | boot                                |           |             |         |
-| v                        |      |                                     |           | v           |         |
-|                          |      | f="/tmp/d-20170720-0930"            |           |             |         |
-|                          |      |                                     |           |             |         |
+| [2017-07-25 Tue 12:03]   | [2017-07-21 Fri 09:04]   |      | kernel configuration                | make.conf | portage     | service |
+|--------------------------+--------------------------+------+-------------------------------------+-----------+-------------+---------|
+|                          | f="/tmp/d-20170721-0915" |      | Smallest Kernel Config              |           |             |         |
+|                          |                          |      | f="/tmp/d-20170719-1040"            |           |             |         |
+|                          |                          |      |                                     |           |             |         |
+|                          | f="/tmp/d-20170721-0920" |      | cpu tmpfs futex eventpoll MULTIUSER |           |             |         |
+|                          |                          |      | f="/tmp/d-20170719-1050"            |           |             |         |
+|                          |                          |      |                                     |           |             |         |
+|                          |                          |      | usb disk fs                         |           |             |         |
+|                          | f="/tmp/d-20170721-0925" |      | f="/tmp/d-20170719-1055"            |           |             |         |
+|                          |                          |      |                                     |           |             |         |
+|                          | f="/tmp/d-20170721-0930" |      | netcards                            |           |             |         |
+|                          |                          |      | f="/tmp/d-20170719-1100"            |           |             |         |
+|--------------------------+--------------------------+------+-------------------------------------+-----------+-------------+---------|
+|                          | f="/tmp/d-20170721-0935" | udev | f="/tmp/d-20170719-1110"            |           |             |         |
+|                          | v                        |      |                                     | v         |             |         |
+|                          | v                        |      |                                     |           | v           |         |
+|                          | v                        |      |                                     |           |             | v       |
+|--------------------------+--------------------------+------+-------------------------------------+-----------+-------------+---------|
+|                          | f="/tmp/d-20170721-0940" | x11  | f="/tmp/d-20170719-1115"            |           |             |         |
+| v                        | v                        |      |                                     | v         |             |         |
+| v                        | v                        |      |                                     |           | v           |         |
+|                          | f="/tmp/d-20170724-0810" |      | libinput                            | libinput  |             |         |
+| f="/tmp/d-20170724-1200" |                          |      | Nouveau (nVidia) cards              |           |             |         |
+|                          |                          |      |                                     |           |             |         |
+|--------------------------+--------------------------+------+-------------------------------------+-----------+-------------+---------|
+|                          | v                        |      |                                     |           | proxychains |         |
+|--------------------------+--------------------------+------+-------------------------------------+-----------+-------------+---------|
+|                          |                          | grub | boot                                |           |             |         |
+|                          | v                        |      |                                     |           | v           |         |
+|                          |                          |      | f="/tmp/d-20170720-0930"            |           |             |         |
+|                          |                          |      |                                     |           |             |         |
 
 
 f="/tmp/d-20170720-0930"
@@ -101,6 +101,8 @@ f="/tmp/d-20170721-0935"
 f="/tmp/d-20170721-09405"
 
 f="/tmp/d-20170724-0810"
+
+f="/tmp/d-20170724-1200"
 
 cp .config $f
 
@@ -176,14 +178,19 @@ make KCONFIG_ALLCONFIG=$f alldefconfig
 time nice -10 \
 make -j 6 && make modules_install
 
+real    1m44.442s
+user    5m48.223s
+sys     0m28.608s
+
+
 real    2m58.810s
 user    10m25.983s
 sys     0m42.895s
 
 
-KERNELVER=4.8.17-hardened-r2-proxychains_grub_kernel
+KERNELVER=4.8.17-hardened-r2-proxychains_grub_kernel_nouveau
 
-EXTENSION=20170724
+EXTENSION=20170725
 
 cp .config /boot/config-${KERNELVER}-${EXTENSION}
 cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
@@ -702,9 +709,6 @@ emerge grub
 https://wiki.gentoo.org/wiki/Weston
 
 https://wiki.archlinux.org/index.php/Wayland
-
-
-emerge --ask dev-libs/weston
 
 
 pm="/etc/portage/make.conf"
@@ -4742,6 +4746,10 @@ $s \
 -C $w \
 --xattrs
 
+
+
+
+
 p=$( ls /tmp/port* )  
 
 echo $p
@@ -4752,6 +4760,27 @@ tar xvpf \
 $p \
 -C $w/usr \
 --xattrs
+
+
+[2017-07-25 Tue 11:46] stage4_20170724_proxychains_grub_kernel_weston.tar.xz
+
+
+real    0m34.658s
+user    0m34.040s
+sys     0m8.284s
+
+
+du -hd1 $w | sort -rh
+
+3.2G    /tmp/wd
+3.1G    /tmp/wd/usr
+51M     /tmp/wd/var
+20M     /tmp/wd/lib64
+9.9M    /tmp/wd/etc
+9.0M    /tmp/wd/bin
+8.7M    /tmp/wd/boot
+6.2M    /tmp/wd/sbin
+3.1M    /tmp/wd/lib32
 
 
 [2017-07-25 Tue 10:22] stage4_20170724_proxychains_grub_kernel_weston.tar.xz
@@ -5078,6 +5107,25 @@ fi
 
 blkid | grep sdd
 
+[2017-07-25 Tue 13:00]
+
+/dev/sdd2: UUID="9dda390a-c02d-4e25-b6f5-f43d7be1e3ba" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="c6a25768-a32d-47e2-b9a2-db06588c4292" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=c6a25768-a32d-47e2-b9a2-db06588c4292   /            ext4    noatime              0 1
+UUID=9dda390a-c02d-4e25-b6f5-f43d7be1e3ba   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
 [2017-07-25 Tue 11:23]
 
 
@@ -5259,6 +5307,12 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+[2017-07-25 Tue 12:52]  stage4_20170725_proxychains_grub_kernel_weston_nouveau.tar.xz
+
+real    8m14.568s
+user    0m34.795s
+sys     0m12.772s
 
 
 [2017-07-25 Tue 11:06] stage4_20170725_proxychains_grub_kernel_weston_nvidia.tar.xz
@@ -6731,6 +6785,13 @@ cat <<EOF >  /tmp/stage4.excl
 EOF
 
 cat /tmp/stage4.excl
+
+time nice -10 \
+tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170725_proxychains_grub_kernel_weston_nouveau.tar.xz
+
+
+
+
 
 time nice -10 \
 tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170725_proxychains_grub_kernel_weston_nvidia.tar.xz

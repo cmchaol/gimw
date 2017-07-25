@@ -669,6 +669,22 @@ man page or refer to the Gentoo Handbook.
 
 
 
+emerge -pv x11-drivers/nvidia-drivers
+
+[2017-07-25 Tue 10:24]
+
+!!! All ebuilds that could satisfy ">=x11-proto/xextproto-7.2.1-r1:=[abi_x86_32(-)?,abi_x86_64(-)?,abi_x86_x32(-)?,abi_mips_n32(-)?,abi_mips_n64(-)?,abi_mips_o32(-)?,abi_ppc_32(-)?,abi_ppc_64(-)?,abi_s390_32(-)?,abi_s390_64(-)?]" have been masked.
+!!! One of the following masked packages is required to complete your request:
+- x11-proto/xextproto-7.3.0::gentoo (masked by: )
+
+(dependency required by "x11-libs/libXext-1.3.3::gentoo" [ebuild])
+(dependency required by "x11-libs/libXrandr-1.5.1::gentoo" [ebuild])
+(dependency required by "x11-libs/gtk+-2.24.31-r1::gentoo" [ebuild])
+(dependency required by "x11-themes/gtk-engines-adwaita-3.22.3::gentoo" [ebuild])
+For more information, see the MASKED PACKAGES section in the emerge
+man page or refer to the Gentoo Handbook.
+
+
 
 *** proxychains grub 
 
@@ -4738,6 +4754,26 @@ $p \
 --xattrs
 
 
+[2017-07-25 Tue 10:22] stage4_20170724_proxychains_grub_kernel_weston.tar.xz
+
+real    0m34.670s
+user    0m34.203s
+sys     0m8.287s
+
+
+du -hd1 $w | sort -rh
+
+3.2G    /tmp/wd
+3.1G    /tmp/wd/usr
+51M     /tmp/wd/var
+20M     /tmp/wd/lib64
+9.9M    /tmp/wd/etc
+9.0M    /tmp/wd/bin
+8.7M    /tmp/wd/boot
+6.2M    /tmp/wd/sbin
+3.1M    /tmp/wd/lib32
+
+
 [2017-07-24 Mon 16:16]  stage4_20170724_proxychains_grub_kernel.tar.xz
 
 real    0m29.371s
@@ -5023,7 +5059,7 @@ useradd -m -G users,wheel,audio,usb,video,weston-launch
 
 
 
-/home/larry/.bash_profileSet XDG_RUNTIME_DIR
+/home/larry/.bash_profile  # Set XDG_RUNTIME_DIR
 #!/bin/bash
 if test -z "${XDG_RUNTIME_DIR}"; then
     export XDG_RUNTIME_DIR=/tmp/${UID}-runtime-dir
@@ -5041,6 +5077,27 @@ fi
 # in host, not in chroot
 
 blkid | grep sdd
+
+[2017-07-25 Tue 11:23]
+
+
+/dev/sdd2: UUID="53c1c14e-2eaf-43d6-baea-5a0c381b8611" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="c1baf8da-f55b-4630-b661-235a080a9eb2" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=c1baf8da-f55b-4630-b661-235a080a9eb2   /            ext4    noatime              0 1
+UUID=53c1c14e-2eaf-43d6-baea-5a0c381b8611   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
 
 [2017-07-25 Tue 07:51]
 
@@ -5202,6 +5259,14 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+
+[2017-07-25 Tue 11:06] stage4_20170725_proxychains_grub_kernel_weston_nvidia.tar.xz
+
+real    14m9.129s
+user    0m42.870s
+sys     0m14.319s
+
 
 
 [2017-07-25 Tue 07:46]  /tmp/stage4_20170724_proxychains_grub_kernel_weston.tar.xz
@@ -6666,6 +6731,16 @@ cat <<EOF >  /tmp/stage4.excl
 EOF
 
 cat /tmp/stage4.excl
+
+time nice -10 \
+tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170725_proxychains_grub_kernel_weston_nvidia.tar.xz
+
+real    9m46.633s
+user    34m50.445s
+sys     0m7.635s
+
+
+
 
 time nice -10 \
 tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170724_proxychains_grub_kernel_weston.tar.xz

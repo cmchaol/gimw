@@ -5263,7 +5263,9 @@ grub-install /dev/sdd
 
 
 # add rootwait
-sed -i 's/#GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="rootwait"/' /etc/default/grub 
+sed -i 's/#GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="rootwait nouveau.modeset=0"/' /etc/default/grub 
+
+sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="rootwait"/GRUB_CMDLINE_LINUX_DEFAULT="rootwait nouveau.modeset=0"/' /etc/default/grub 
 
 cat /etc/default/grub | grep GRUB_CMDLINE_LINUX_DEFAULT
 

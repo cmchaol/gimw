@@ -706,9 +706,13 @@ emerge grub
 
 *** Weston 
 
+https://wayland.freedesktop.org/building.html
+
 https://wiki.gentoo.org/wiki/Weston
 
 https://wiki.archlinux.org/index.php/Wayland
+
+https://nouveau.freedesktop.org/wiki/HangDiagnosis/
 
 
 pm="/etc/portage/make.conf"
@@ -5253,7 +5257,7 @@ lsblk
 *** 80
 
 qemu-system-x86_64 -m 1G -drive file=/dev/sdd
-
+c
 qemu-system-x86_64 -m 1G -drive file=/dev/sdb
 
 

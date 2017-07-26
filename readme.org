@@ -38,8 +38,9 @@
 |                                   |                      |      |                          |           |         |         |
 | rc-update add udev sysinit        |                      |      |                          |           |         |         |
 |-----------------------------------+----------------------+------+--------------------------+-----------+---------+---------|
-| f="/tmp/ker448-20170726-1525"     |                      | x11  | f="/tmp/d-20170724-1450" |           |         |         |
+| f="/tmp/ker448-20170726-1525"     | xorg driver          | x11  | f="/tmp/d-20170724-1450" |           |         |         |
 |                                   |                      |      |                          |           |         |         |
+| f="/tmp/ker448-20170726-1620"     | add Event interface  |      |                          |           |         |         |
 |                                   |                      |      |                          |           |         |         |
 | INPUT_DEVICES="libinput"          |                      |      | v                        | v         |         |         |
 |                                   |                      |      | v                        |           | v       |         |
@@ -59,6 +60,8 @@ f="/tmp/ker448-20170726-1515"
 f="/tmp/ker448-20170726-1520" 
 
 f="/tmp/ker448-20170726-1525"  
+
+f="/tmp/ker448-20170726-1620"
 
 cp .config $f
 
@@ -622,6 +625,15 @@ General setup → Configure standard kernel features (expert users)
 
  *   CONFIG_ZONE_DMA:    is not set when it should be.
  *   CONFIG_SYSVIPC:     is not set when it should be.
+
+
+Device Drivers  --->
+  Input device support --->
+    <*> Generic input layer (needed for...) [CONFIG_INPUT]
+    <*>   Event interface                   [CONFIG_INPUT_EVDEV]
+    [*]   Miscellaneous devices  --->       [CONFIG_INPUT_MISC]
+      <*>    User level driver support      [CONFIG_INPUT_UINPUT]
+
 
 reference
 

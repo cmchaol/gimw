@@ -566,6 +566,7 @@ https://wiki.gentoo.org/wiki/Libinput
 
 emerge --ask --depclean
 
+emerge --ask --changed-use --deep @world
 
 
 pm="/etc/portage/make.conf"
@@ -4805,6 +4806,31 @@ tar xvpf \
 $p \
 -C $w/usr \
 --xattrs
+
+[2017-07-26 Wed 14:20]
+
+/tmp/stage3-amd64-hardened-20170720.tar.bz2
+
+real    0m39.879s
+user    0m39.459s
+sys     0m2.443s
+
+916M    /tmp/wd
+844M    /tmp/wd/usr
+29M     /tmp/wd/var
+17M     /tmp/wd/lib64
+9.6M    /tmp/wd/etc
+9.0M    /tmp/wd/bin
+6.2M    /tmp/wd/sbin
+3.1M    /tmp/wd/lib32
+
+real    0m6.545s
+user    0m6.915s
+sys     0m2.936s
+
+
+
+
 
 [2017-07-26 Wed 09:21]  stage4_20170725_proxychains_grub_kernel_weston_nouveau.tar.xz
 

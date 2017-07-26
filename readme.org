@@ -4,31 +4,31 @@
 
 *** Weston
 
-| [2017-07-24 Mon 14:14]   |      | kernel configuration | make.conf | portage          | service |
-|--------------------------+------+----------------------+-----------+------------------+---------|
-| v                        |      |                      |           | proxychains      |         |
-| v                        |      |                      |           | hardened-sources |         |
-|                          |      |                      |           |                  |         |
-| f="/tmp/d-20170724-1425" |      | Smallest Kernel      |           |                  |         |
-|                          |      |                      |           |                  |         |
-| f="/tmp/d-20170724-1430" |      | cpu tmpfs futex      |           |                  |         |
-|                          |      | eventpoll MULTIUSER  |           |                  |         |
-|                          |      |                      |           |                  |         |
-| f="/tmp/d-20170724-1435" |      | usb disk fs          |           |                  |         |
-|                          |      |                      |           |                  |         |
-| f="/tmp/d-20170724-1440" |      | netcards             |           |                  |         |
-|--------------------------+------+----------------------+-----------+------------------+---------|
-| f="/tmp/d-20170724-1445" | udev |                      |           |                  |         |
-| v                        |      |                      | v         |                  |         |
-| v                        |      |                      |           | v                |         |
-| v                        |      |                      |           |                  | v       |
-|--------------------------+------+----------------------+-----------+------------------+---------|
-| f="/tmp/d-20170724-1450" | x11  |                      |           |                  |         |
-| v                        |      |                      | v         |                  |         |
-| v                        |      |                      |           | v                |         |
-|--------------------------+------+----------------------+-----------+------------------+---------|
-| v                        | grub |                      |           | v                |         |
-|                          |      |                      |           |                  |         |
+|                          | [2017-07-24 Mon 14:14]   |      | kernel configuration | make.conf | portage          | service |
+|--------------------------+--------------------------+------+----------------------+-----------+------------------+---------|
+|                          | v                        |      |                      |           | proxychains      |         |
+|                          | v                        |      |                      |           | hardened-sources |         |
+|                          |                          |      |                      |           |                  |         |
+|                          | f="/tmp/d-20170724-1425" |      | Smallest Kernel      |           |                  |         |
+|                          |                          |      |                      |           |                  |         |
+|                          | f="/tmp/d-20170724-1430" |      | cpu tmpfs futex      |           |                  |         |
+|                          |                          |      | eventpoll MULTIUSER  |           |                  |         |
+|                          |                          |      |                      |           |                  |         |
+|                          | f="/tmp/d-20170724-1435" |      | usb disk fs          |           |                  |         |
+|                          |                          |      |                      |           |                  |         |
+|                          | f="/tmp/d-20170724-1440" |      | netcards             |           |                  |         |
+|--------------------------+--------------------------+------+----------------------+-----------+------------------+---------|
+|                          | f="/tmp/d-20170724-1445" | udev |                      |           |                  |         |
+|                          | v                        |      |                      | v         |                  |         |
+|                          | v                        |      |                      |           | v                |         |
+|                          | v                        |      |                      |           |                  | v       |
+|--------------------------+--------------------------+------+----------------------+-----------+------------------+---------|
+| f="/tmp/d-20170726-1000" | f="/tmp/d-20170724-1450" | x11  |                      |           |                  |         |
+| nouveau                  | v                        |      |                      | v         |                  |         |
+|                          | v                        |      |                      |           | v                |         |
+|--------------------------+--------------------------+------+----------------------+-----------+------------------+---------|
+|                          | v                        | grub |                      |           | v                |         |
+|                          |                          |      |                      |           |                  |         |
 
 
 f="/tmp/d-20170724-1425"
@@ -42,6 +42,8 @@ f="/tmp/d-20170724-1440"
 f="/tmp/d-20170724-1445"
 
 f="/tmp/d-20170724-1450" 
+
+f="/tmp/d-20170726-1000"
 
 cp .config $f
 
@@ -172,6 +174,8 @@ make allnoconfig
 make menuconfig
 
 
+cp $f .config 
+
 make KCONFIG_ALLCONFIG=$f alldefconfig
 
 
@@ -188,9 +192,9 @@ user    10m25.983s
 sys     0m42.895s
 
 
-KERNELVER=4.8.17-hardened-r2-proxychains_grub_kernel_nouveau
+KERNELVER=4.4.8-hardened-r1-nouveau
 
-EXTENSION=20170725
+EXTENSION=20170726
 
 cp .config /boot/config-${KERNELVER}-${EXTENSION}
 cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
@@ -212,9 +216,46 @@ emerge sys-kernel/hardened-sources
 
 tail -f /tmp/wd/var/log/emerge-fetch.log
 
+proxychains -f /root/proxychains.conf \
+emerge --ask app-portage/gentoolkit
+
+equery y hardened-sources
+
+
+Keywords for sys-kernel/hardened-sources:
+             |                                 |   u           |  
+             | a a         p s   a     n r     |   n           |  
+             | l m   h i   p p   r m m i i s   | e u s         | r
+             | p d a p a p c a x m i 6 o s 3   | a s l         | e
+             | h 6 r p 6 p 6 r 8 6 p 8 s c 9 s | p e o         | p
+             | a 4 m a 4 c 4 c 6 4 s k 2 v 0 h | i d t         | o
+-------------+---------------------------------+---------------+-------
+    4.4.8-r1 | ~ + ~ ~ ~ ~ ~ ~ + o o o o o o o | 5 o 4.4.8-r1  | gentoo
+-------------+---------------------------------+---------------+-------
+    4.7.6    | ~ + ~ ~ ~ ~ ~ ~ + o o o o o o o | 5 o 4.7.6     | gentoo
+-------------+---------------------------------+---------------+-------
+   4.7.10    | ~ + ~ ~ ~ ~ ~ ~ + o o o o o o o | 5 o 4.7.10    | gentoo
+-------------+---------------------------------+---------------+-------
+[I]4.8.17-r2 | ~ + ~ ~ ~ ~ ~ ~ + o o o o o o o | 5 o 4.8.17-r2 | gentoo
+-------------+---------------------------------+---------------+-------
+   4.9.21    | ~ ~ ~ ~ ~ ~ ~ ~ ~ o o o o o o o | 5 o 4.9.21    | gentoo
+-------------+---------------------------------+---------------+-------
+   4.9.22    | ~ ~ ~ ~ ~ ~ ~ ~ ~ o o o o o o o | 5 o 4.9.22    | gentoo
+-------------+---------------------------------+---------------+-------
+   4.9.23    | ~ ~ ~ ~ ~ ~ ~ ~ ~ o o o o o o o | 5 o 4.9.23    | gentoo
+-------------+---------------------------------+---------------+-------
+   4.9.24    | ~ ~ ~ ~ ~ ~ ~ ~ ~ o o o o o o o | 5 o 4.9.24    | gentoo
+
+emerge =www-client/firefox-24.8.0
+
+emerge =www-client/firefox-4.4.8-r1
+
+proxychains -f /root/proxychains.conf \
+emerge =sys-kernel/hardened-sources-4.4.8-r1
 
 
 
+https://unix.stackexchange.com/questions/122989/portage-on-gentoo-how-to-view-available-software-versions
 
 
 *** Smallest Kernel Config
@@ -4765,6 +4806,22 @@ $p \
 -C $w/usr \
 --xattrs
 
+[2017-07-26 Wed 09:21]  stage4_20170725_proxychains_grub_kernel_weston_nouveau.tar.xz
+
+real    0m35.752s
+user    0m34.601s
+sys     0m8.337s
+
+3.2G    /tmp/wd
+3.1G    /tmp/wd/usr
+51M     /tmp/wd/var
+23M     /tmp/wd/lib64
+14M     /tmp/wd/boot
+9.9M    /tmp/wd/etc
+9.0M    /tmp/wd/bin
+6.2M    /tmp/wd/sbin
+3.1M    /tmp/wd/lib32
+
 
 [2017-07-25 Tue 11:46] stage4_20170724_proxychains_grub_kernel_weston.tar.xz
 
@@ -5111,6 +5168,25 @@ fi
 
 blkid | grep sdd
 
+[2017-07-26 Wed 10:35]
+
+/dev/sdd2: UUID="630da936-4ef5-4442-9cde-36014501ad06" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="11571776-168b-49a0-9b90-7d984240e9f4" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+cat <<EOF > $w/etc/fstab
+UUID=11571776-168b-49a0-9b90-7d984240e9f4   /            ext4    noatime              0 1
+UUID=630da936-4ef5-4442-9cde-36014501ad06   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
 [2017-07-25 Tue 13:00]
 
 /dev/sdd2: UUID="9dda390a-c02d-4e25-b6f5-f43d7be1e3ba" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
@@ -5257,7 +5333,9 @@ lsblk
 *** 80
 
 qemu-system-x86_64 -m 1G -drive file=/dev/sdd
-c
+
+
+
 qemu-system-x86_64 -m 1G -drive file=/dev/sdb
 
 
@@ -5303,7 +5381,7 @@ mount /dev/sdb2 $w/boot
 *** 20
 
 
-s=$( ls /tmp/*.tar.* )
+s=$( ls /tmp/*.tar* )
 
 echo $s
 
@@ -5313,6 +5391,14 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+[2017-07-26 Wed 10:09]  /tmp/stage4_20170726_nouveau.tar_kernel4.4.8.r1.xz
+
+real    24m59.655s
+user    0m45.083s
+sys     0m16.642s
+
+
 
 [2017-07-25 Tue 12:52]  stage4_20170725_proxychains_grub_kernel_weston_nouveau.tar.xz
 
@@ -6793,7 +6879,13 @@ EOF
 cat /tmp/stage4.excl
 
 time nice -10 \
-tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170725_proxychains_grub_kernel_weston_nouveau.tar.xz
+tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170726_nouveau.tar_kernel4.4.8.r1.xz
+
+  100 %     811.2 MiB / 3,685.9 MiB = 0.220   5.9 MiB/s      10:26             
+
+real    10m26.511s
+user    39m42.774s
+sys     0m8.807s
 
 
 

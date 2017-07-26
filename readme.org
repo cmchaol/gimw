@@ -2,6 +2,78 @@
 
 ** kernel and package build
 
+*** Weston [2017-07-26 Wed 14:31]
+
+
+| [2017-07-26 Wed 14:31]            | kernel configuration |      | [2017-07-24 Mon 14:14]   | make.conf | portage | service |
+|-----------------------------------+----------------------+------+--------------------------+-----------+---------+---------|
+| cp /etc/resolv.conf               |                      |      |                          |           |         |         |
+|                                   |                      |      |                          |           |         |         |
+| emerge proxychains                |                      |      |                          |           |         |         |
+|                                   |                      |      |                          |           |         |         |
+| cp proxychains.conf /tmp/wd/root  |                      |      |                          |           |         |         |
+|                                   |                      |      |                          |           |         |         |
+| stage4_pro_20170726.tar.xz        |                      |      |                          |           |         |         |
+|                                   |                      |      |                          |           |         |         |
+| emerge kernel                     |                      |      |                          |           |         |         |
+|                                   |                      |      |                          |           |         |         |
+| stage4_pro_ker448_20170726.tar.xz |                      |      |                          |           |         |         |
+|-----------------------------------+----------------------+------+--------------------------+-----------+---------+---------|
+|                                   | kernel configuration |      |                          |           |         |         |
+|                                   |                      |      |                          |           |         |         |
+| f="/tmp/ker448-20170726-1500"     | Smallest Kernel      |      | f="/tmp/d-20170724-1425" |           |         |         |
+|                                   |                      |      |                          |           |         |         |
+| f="/tmp/ker448-20170726-1505"     | cpu tmpfs futex      |      | f="/tmp/d-20170724-1430" |           |         |         |
+|                                   | eventpoll MULTIUSER  |      |                          |           |         |         |
+|                                   |                      |      |                          |           |         |         |
+| f="/tmp/ker448-20170726-1510"     | usb disk fs          |      | f="/tmp/d-20170724-1435" |           |         |         |
+|                                   |                      |      |                          |           |         |         |
+| f="/tmp/ker448-20170726-1515"     | netcards             |      | f="/tmp/d-20170724-1440" |           |         |         |
+|-----------------------------------+----------------------+------+--------------------------+-----------+---------+---------|
+| f="/tmp/ker448-20170726-1520"     | udev                 |      |                          |           |         |         |
+|                                   |                      |      |                          |           |         |         |
+| USE="udev"                        |                      |      | v                        | v         |         |         |
+|                                   |                      |      |                          |           |         |         |
+| emerge                            |                      |      |                          |           |         |         |
+|                                   |                      |      |                          |           |         |         |
+| rc-update add udev sysinit        |                      |      |                          |           |         |         |
+|-----------------------------------+----------------------+------+--------------------------+-----------+---------+---------|
+| f="/tmp/ker448-20170726-1525"     |                      | x11  | f="/tmp/d-20170724-1450" |           |         |         |
+|                                   |                      |      |                          |           |         |         |
+|                                   |                      |      |                          |           |         |         |
+| INPUT_DEVICES="libinput"          |                      |      | v                        | v         |         |         |
+|                                   |                      |      | v                        |           | v       |         |
+|-----------------------------------+----------------------+------+--------------------------+-----------+---------+---------|
+|                                   |                      | grub | v                        |           | v       |         |
+|                                   |                      |      |                          |           |         |         |
+
+
+f="/tmp/ker448-20170726-1500"
+
+f="/tmp/ker448-20170726-1505"
+
+f="/tmp/ker448-20170726-1510"
+
+f="/tmp/ker448-20170726-1515"
+
+f="/tmp/ker448-20170726-1520" 
+
+f="/tmp/ker448-20170726-1525"  
+
+cp .config $f
+
+
+make menuconfig
+
+
+proxychains -f /root/proxychains.conf \
+emerge =sys-kernel/hardened-sources-4.4.8-r1
+
+# 
+tail -f /tmp/wd/var/log/emerge-fetch.log
+
+
+
 *** Weston
 
 |                          | [2017-07-24 Mon 14:14]   |      | kernel configuration | make.conf | portage          | service |
@@ -427,9 +499,14 @@ Networking support > Wireless
 
 Device Drivers > Network device support > Wireless LAN 
 [*]   Intersil devices (NEW)  
- <M>     Softmac Prism54 support                                                                                │ │  
-  <M>       Prism54 USB support   
- 
+ <M>     Softmac Prism54 support 
+  <M>       Prism54 USB support
+
+Linux/x86 4.4.8-hardened-r1 
+Device Drivers → Network device support → Wireless LAN 
+  <M>   Softmac Prism54 support 
+   <M>     Prism54 USB support
+
 
 *** udev
 
@@ -476,7 +553,9 @@ sed -i 's/USE="/USE="udev /g' /etc/portage/make.conf
 
 
 proxychains -f /root/proxychains.conf \
-emerge --changed-use --deep @world
+emerge --changed-use --deep @world --ask
+
+
 
 rc-update add udev sysinit
 
@@ -491,7 +570,7 @@ x11-base/xorg-server
 | v |   |   |   |   | Device Drivers                             |           |           |              |
 |   | v |   |   |   | Input device support                       |           |           |              |
 |   |   | v |   |   | Event interface slowly (deprecating evdev) | *         |           |              |
-|   |   |   |   |   |                                            |           |           | 4            |
+|   |   |   |   |   |                                            | none      |           | 4            |
 |---+---+---+---+---+--------------------------------------------+-----------+-----------+--------------|
 |   |   |   |   |   |                                            |           |           |              |
 |   | v |   |   |   | Graphics support                           |           |           |              |
@@ -528,6 +607,8 @@ x11-base/xorg-server
 |   |   | 3 |   |   | Nouveau (nVidia) cards                     | blank     |           |              |
 |---+---+---+---+---+--------------------------------------------+-----------+-----------+--------------|
 |   |   |   |   |   |                                            |           |           |              |
+
+
 
 Processor type and features
  [*] DMA memory allocation support    
@@ -585,7 +666,7 @@ GENTOO_MIRRORS="http://ftp.twaren.net/Linux/Gentoo/ http://ftp.jaist.ac.jp/pub/L
 INPUT_DEVICES="libinput"
 # INPUT_DEVICES="evdev"
 
-VIDEO_CARDS="nvidia intel i915"
+VIDEO_CARDS="nouveau intel i915"
 # VIDEO_CARDS="nouveau"
 
 PAX_MARKINGS="XT" 
@@ -593,7 +674,7 @@ PAX_MARKINGS="XT"
 EOF
 
 
-sed -i 's/USE="/USE="xattr /' /etc/portage/make.conf
+sed -i 's/USE="/USE="xattr wayland /' /etc/portage/make.conf
 
 # sed -i 's/INPUT_DEVICES="evdev"/INPUT_DEVICES="libinput"/' /etc/portage/make.conf
 
@@ -609,9 +690,9 @@ sed -i 's/rsync.gentoo/rsync.tw.gentoo/' /etc/portage/repos.conf/gentoo.conf
 sed  '' /etc/portage/repos.conf/gentoo.conf
 
 
-cp -L /etc/resolv.conf /tmp/wy/etc/
+# cp -L /etc/resolv.conf /tmp/wy/etc/
 
-cp proxychains.conf /tmp/wy/root
+# cp proxychains.conf /tmp/wy/root
 
 
 
@@ -737,6 +818,8 @@ man page or refer to the Gentoo Handbook.
 
 *** proxychains grub 
 
+
+
 emerge proxychains
 
 proxychains -f /root/proxychains.conf bash
@@ -776,6 +859,11 @@ cat /etc/portage/package.use/weston
 
 proxychains -f /root/proxychains.conf \
 emerge --ask dev-libs/weston
+
+dispatch-conf
+
+proxychains -f /root/proxychains.conf \
+emerge  dev-libs/weston
 
 
 ** savedefconfig alldefconfig
@@ -4807,6 +4895,21 @@ $p \
 -C $w/usr \
 --xattrs
 
+[2017-07-26 Wed 14:30]
+
+
+/tmp/stage3-amd64-hardened-20170720.tar.bz2
+
+real    0m30.962s
+user    0m30.531s
+sys     0m2.403s
+
+real    0m6.470s
+user    0m6.769s
+sys     0m2.943s
+
+
+
 [2017-07-26 Wed 14:20]
 
 /tmp/stage3-amd64-hardened-20170720.tar.bz2
@@ -6905,7 +7008,29 @@ EOF
 cat /tmp/stage4.excl
 
 time nice -10 \
-tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_20170726_nouveau.tar_kernel4.4.8.r1.xz
+tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_pro_ker448_20170726.tar.xz
+
+  100 %     377.8 MiB / 2,097.1 MiB = 0.180   5.6 MiB/s       6:16             
+
+real    6m17.117s
+user    22m23.515s
+sys     0m6.158s
+
+
+
+
+
+time nice -10 \
+tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_pro_20170726.tar.xz
+
+  100 %     205.6 MiB / 1,381.8 MiB = 0.149   5.9 MiB/s       3:53             
+
+real    3m53.213s
+user    13m17.013s
+sys     0m4.807s
+
+
+
 
   100 %     811.2 MiB / 3,685.9 MiB = 0.220   5.9 MiB/s      10:26             
 

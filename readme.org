@@ -66,6 +66,9 @@
 |                                 |                                   |                                               |
 | emerge google-chrome            |                                   |                                               |
 |                                 |                                   |                                               |
+| emerge emacs                    |                                   |                                               |
+|                                 |                                   |                                               |
+| emerge autossh key              |                                   |                                               |
 
 
 
@@ -95,8 +98,17 @@ emerge =sys-kernel/hardened-sources-4.4.8-r1
 # 
 tail -f /tmp/wd/var/log/emerge-fetch.log
 
+
+
 proxychains -f /root/proxychains.conf \
 emerge -pv google-chrome 
+
+
+
+proxychains -f /root/proxychains.conf \
+emerge -pv dev-vcs/git
+
+
 
 *** Weston [2017-07-26 Wed 14:31]
 
@@ -1198,111 +1210,147 @@ make menuconfig
 
 dispatch-conf
 
+*** lists [2017-07-27 Thu 15:34]
+
+proxychains -f /root/proxychains.conf \
+emerge autossh
+
+proxychains -f /root/proxychains.conf \
+emerge keychain
+
+
+proxychains -f /root/proxychains.conf \
+emerge www-client/google-chrome  --autounmask-write
+
+dispatch-conf
+
+
+echo "app-editors/emacs xft X jpeg png svg tiff alsa gif imagemagick sound" > /etc/portage/package.use/emacs
+
+# echo "app-editors/emacs xft X" >> /etc/portage/package.use/emacs
+
+cat /etc/portage/package.use/emacs
+
+
+
+proxychains -f /root/proxychains.conf \
+emerge app-editors/emacs  -pv
+
+proxychains -f /root/proxychains.conf \
+emerge app-editors/emacs  --autounmask-write
+
+dispatch-conf
+
+tail -f /tmp/wd/var/log/emerge-fetch.log
+
+
 
 *** inventory
 
-|               | tmpfs    | h77md3h fs2             |
-|               | hardened |                         |
-|               |          |                         |
-|---------------+----------+-------------------------|
-| shell group   |          |                         |
-|               |          |                         |
-| proxychains   | default  |                         |
-|               |          |                         |
-| grub          |          |                         |
-|               |          |                         |
-| dhcpcd        |          |                         |
-|               |          |                         |
-| keychain      |          |                         |
-|               |          |                         |
-| parallel      |          |                         |
-|               |          |                         |
-| git           |          | [2016-04-10 Sun 20:54]  |
-|               |          |                         |
-| mc            |          |                         |
-|               |          |                         |
-| tree          |          |                         |
-|               |          |                         |
-| megatools     |          |                         |
-|               |          |                         |
-| layman        |          |                         |
-|               |          |                         |
-| ftp           |          |                         |
-|               |          |                         |
-| curlftpfs     |          |                         |
-|               |          |                         |
-| wifi          |          |                         |
-|               |          |                         |
-| gentoolkit    |          |                         |
-|               |          |                         |
-| unrar         |          |                         |
-|               |          |                         |
-| convmv        |          |                         |
-|               |          |                         |
-| p7zip         |          |                         |
-|               |          |                         |
-| pciutils      |          |                         |
-|               |          |                         |
-| sshfs         |          |                         |
-|               |          |                         |
-| usbip         |          |                         |
-|               |          |                         |
-| qemu          |          |                         |
-|               |          |                         |
-| openvpn       |          |                         |
-|               |          |                         |
-| python        |          |                         |
-|               |          |                         |
-| postgresql    |          |                         |
-|               |          |                         |
-|---------------+----------+-------------------------|
-| xorg group    |          |                         |
-|               |          |                         |
-| xorg-server   |          | [2016-04-10 Sun 21:22]  |
-|               |          |                         |
-| xorg-drivers  |          | automatically installed |
-| intel         |          |                         |
-|               |          |                         |
-| mesa          |          | automatically installed |
-| i915          |          |                         |
-|               |          |                         |
-| xrandr        |          | [2016-04-10 Sun 22:22]  |
-|               |          |                         |
-| xterm         |          |                         |
-|               |          |                         |
-| spectrwm      |          |                         |
-|               |          |                         |
-| scrot         |          |                         |
-|               |          |                         |
-| vnc           |          |                         |
-|               |          |                         |
-| gtk+          |          |                         |
-|               |          |                         |
-|               |          |                         |
-|---------------+----------+-------------------------|
-| editors       |          |                         |
-|               |          |                         |
-| emacs         |          |                         |
-|               |          |                         |
-| google-chrome |          |                         |
-|               |          |                         |
-| firefox       |          |                         |
-|               |          |                         |
-| pdfshuffler   |          |                         |
-|               |          |                         |
-| libreoffice   |          |                         |
-|               |          |                         |
-| gimp          |          |                         |
-|               |          |                         |
-| imagemagick   |          |                         |
-|               |          |                         |
-| imagej        |          |                         |
-|               |          |                         |
-| okular        |          |                         |
-|---------------+----------+-------------------------|
-| audio         |          |                         |
-|               |          |                         |
-|               |          |                         |
+|               |                        | tmpfs    | h77md3h fs2             |
+|               |                        | hardened |                         |
+|               | [2017-07-27 Thu 15:35] |          |                         |
+|---------------+------------------------+----------+-------------------------|
+| shell group   |                        |          |                         |
+|               |                        |          |                         |
+| proxychains   |                        | default  |                         |
+|               |                        |          |                         |
+| grub          |                        |          |                         |
+|               |                        |          |                         |
+| dhcpcd        |                        |          |                         |
+|               |                        |          |                         |
+| autossh       | v                      |          |                         |
+|               |                        |          |                         |
+| keychain      | v                      |          |                         |
+|               |                        |          |                         |
+| parallel      |                        |          |                         |
+|               |                        |          |                         |
+| git           |                        |          | [2016-04-10 Sun 20:54]  |
+|               |                        |          |                         |
+| mc            |                        |          |                         |
+|               |                        |          |                         |
+| tree          |                        |          |                         |
+|               |                        |          |                         |
+| megatools     |                        |          |                         |
+|               |                        |          |                         |
+| layman        |                        |          |                         |
+|               |                        |          |                         |
+| ftp           |                        |          |                         |
+|               |                        |          |                         |
+| curlftpfs     |                        |          |                         |
+|               |                        |          |                         |
+| wifi          |                        |          |                         |
+|               |                        |          |                         |
+| gentoolkit    |                        |          |                         |
+|               |                        |          |                         |
+| unrar         |                        |          |                         |
+|               |                        |          |                         |
+| convmv        |                        |          |                         |
+|               |                        |          |                         |
+| p7zip         |                        |          |                         |
+|               |                        |          |                         |
+| pciutils      |                        |          |                         |
+|               |                        |          |                         |
+| sshfs         |                        |          |                         |
+|               |                        |          |                         |
+| usbip         |                        |          |                         |
+|               |                        |          |                         |
+| qemu          |                        |          |                         |
+|               |                        |          |                         |
+| openvpn       |                        |          |                         |
+|               |                        |          |                         |
+| python        |                        |          |                         |
+|               |                        |          |                         |
+| postgresql    |                        |          |                         |
+|               |                        |          |                         |
+|---------------+------------------------+----------+-------------------------|
+| xorg group    |                        |          |                         |
+|               |                        |          |                         |
+| xorg-server   |                        |          | [2016-04-10 Sun 21:22]  |
+|               |                        |          |                         |
+| xorg-drivers  |                        |          | automatically installed |
+| intel         |                        |          |                         |
+|               |                        |          |                         |
+| mesa          |                        |          | automatically installed |
+| i915          |                        |          |                         |
+|               |                        |          |                         |
+| xrandr        |                        |          | [2016-04-10 Sun 22:22]  |
+|               |                        |          |                         |
+| xterm         |                        |          |                         |
+|               |                        |          |                         |
+| spectrwm      |                        |          |                         |
+|               |                        |          |                         |
+| scrot         |                        |          |                         |
+|               |                        |          |                         |
+| vnc           |                        |          |                         |
+|               |                        |          |                         |
+| gtk+          |                        |          |                         |
+|               |                        |          |                         |
+|               |                        |          |                         |
+|---------------+------------------------+----------+-------------------------|
+| editors       |                        |          |                         |
+|               |                        |          |                         |
+| emacs         |                        |          |                         |
+|               |                        |          |                         |
+| google-chrome | v                      |          |                         |
+|               |                        |          |                         |
+| firefox       |                        |          |                         |
+|               |                        |          |                         |
+| pdfshuffler   |                        |          |                         |
+|               |                        |          |                         |
+| libreoffice   |                        |          |                         |
+|               |                        |          |                         |
+| gimp          |                        |          |                         |
+|               |                        |          |                         |
+| imagemagick   |                        |          |                         |
+|               |                        |          |                         |
+| imagej        |                        |          |                         |
+|               |                        |          |                         |
+| okular        |                        |          |                         |
+|---------------+------------------------+----------+-------------------------|
+| audio         |                        |          |                         |
+|               |                        |          |                         |
+|               |                        |          |                         |
 
 
 
@@ -3352,7 +3400,7 @@ https://wiki.gentoo.org/wiki/GNU_Emacs
 
 echo "app-editors/emacs xft X jpeg png svg tiff alsa gif imagemagick sound" > /etc/portage/package.use/emacs
 
-echo "app-editors/emacs xft X" >> /etc/portage/package.use/emacs
+# echo "app-editors/emacs xft X" >> /etc/portage/package.use/emacs
 
 cat /etc/portage/package.use/emacs
 
@@ -5021,6 +5069,16 @@ tar xvpf \
 $p \
 -C $w/usr \
 --xattrs
+
+[2017-07-27 Thu 15:29]
+
+/tmp/stage4_pro_ker448_weston_grub_20170727.tar.xz
+
+real    0m34.927s
+user    0m33.831s
+sys     0m8.122s
+
+
 
 
 [2017-07-27 Thu 12:02] stage4_pro_ker448_20170726.tar.xz
@@ -7206,7 +7264,16 @@ EOF
 cat /tmp/stage4.excl
 
 time nice -10 \
-tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_pro_ker448_weston_grub_20170727.tar.xz
+tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_pro_k448_wes_gru_chr_ema_20170727.tar.xz
+
+  100 %   1,031.6 MiB / 3,610.6 MiB = 0.286   5.5 MiB/s      10:58             
+
+real    10m58.221s
+user    39m22.205s
+sys     0m9.202s
+
+
+
 
 real    8m15.571s
 user    28m17.956s

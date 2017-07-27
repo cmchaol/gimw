@@ -5319,6 +5319,28 @@ fi
 
 blkid | grep sdd
 
+[2017-07-27 Thu 08:39]
+
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd2: UUID="c1bf6984-677a-4a01-9f15-15d7c48a6315" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+/dev/sdd4: UUID="aaad666e-3f21-4ff5-a615-10cb4b2ce797" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=aaad666e-3f21-4ff5-a615-10cb4b2ce797   /            ext4    noatime              0 1
+UUID=c1bf6984-677a-4a01-9f15-15d7c48a6315   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
+
+
 [2017-07-26 Wed 10:35]
 
 /dev/sdd2: UUID="630da936-4ef5-4442-9cde-36014501ad06" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
@@ -5496,7 +5518,7 @@ grub-install /dev/sdd
 
 
 # add rootwait
-sed -i 's/#GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="rootwait nouveau.modeset=0"/' /etc/default/grub 
+sed -i 's/#GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="rootwait"/' /etc/default/grub 
 
 sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="rootwait"/GRUB_CMDLINE_LINUX_DEFAULT="rootwait nouveau.modeset=0"/' /etc/default/grub 
 

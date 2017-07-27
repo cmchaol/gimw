@@ -2,6 +2,102 @@
 
 ** kernel and package build
 
+*** Weston [2017-07-27 Thu 12:03]
+
+
+|                                 | [2017-07-27 Thu 12:03]            | [2017-07-26 Wed 14:31]                        |
+|---------------------------------+-----------------------------------+-----------------------------------------------|
+|                                 |                                   | cp /etc/resolv.conf                           |
+|                                 |                                   |                                               |
+|                                 |                                   | emerge proxychains                            |
+|                                 |                                   |                                               |
+|                                 |                                   | cp proxychains.conf /tmp/wd/root              |
+|                                 |                                   |                                               |
+|                                 |                                   | stage4_pro_20170726.tar.xz                    |
+|                                 |                                   |                                               |
+|                                 |                                   | emerge kernel                                 |
+|                                 |                                   |                                               |
+|                                 | stage4_pro_ker448_20170726.tar.xz | stage4_pro_ker448_20170726.tar.xz             |
+|                                 |                                   |                                               |
+|---------------------------------+-----------------------------------+-----------------------------------------------|
+| kernel configuration            |                                   |                                               |
+|                                 |                                   |                                               |
+| Smallest Kernel                 |                                   | f="/tmp/ker448-20170726-1500"                 |
+|                                 |                                   |                                               |
+| cpu tmpfs futex                 |                                   | f="/tmp/ker448-20170726-1505"                 |
+| eventpoll MULTIUSER             |                                   |                                               |
+|                                 |                                   |                                               |
+| usb disk fs                     |                                   | f="/tmp/ker448-20170726-1510"                 |
+|                                 |                                   |                                               |
+| netcards                        |                                   | f="/tmp/ker448-20170726-1515"                 |
+|---------------------------------+-----------------------------------+-----------------------------------------------|
+| udev                            |                                   | f="/tmp/ker448-20170726-1520"                 |
+|                                 |                                   |                                               |
+| USE="udev"                      | v                                 | USE="udev"                                    |
+|                                 |                                   |                                               |
+| emerge                          | v                                 | emerge                                        |
+|                                 |                                   |                                               |
+| rc-update add udev sysinit      | v                                 | rc-update add udev sysinit                    |
+|                                 |                                   |                                               |
+|---------------------------------+-----------------------------------+-----------------------------------------------|
+| xorg driver                     |                                   | f="/tmp/ker448-20170726-1525"                 |
+|                                 |                                   |                                               |
+| add Event interface             |                                   | f="/tmp/ker448-20170726-1620"                 |
+|                                 | f="/tmp/ker448-20170726-1620"     |                                               |
+|                                 |                                   |                                               |
+| <*> Framebuffer Console support | f="/tmp/ker448-20170727-1220"     |                                               |
+|                                 |                                   |                                               |
+| INPUT_DEVICES="libinput"        | v                                 | v                                             |
+|                                 |                                   |                                               |
+| emerge weston                   | v                                 |                                               |
+|                                 |                                   |                                               |
+|---------------------------------+-----------------------------------+-----------------------------------------------|
+| emerge grub                     | v                                 | v                                             |
+|                                 |                                   |                                               |
+|---------------------------------+-----------------------------------+-----------------------------------------------|
+|                                 |                                   | stage4_pro_ker448_weston_grub_20170726.tar.xz |
+|                                 |                                   |                                               |
+| chrome                          |                                   |                                               |
+| browser                         |                                   |                                               |
+|                                 |                                   |                                               |
+| General setup                   |                                   |                                               |
+| Namespaces support              |                                   |                                               |
+| User namespace                  | f="/tmp/ker448-20170727-1425"     |                                               |
+|                                 |                                   |                                               |
+| emerge google-chrome            |                                   |                                               |
+|                                 |                                   |                                               |
+
+
+
+cd /usr/src/linux
+
+f="/tmp/ker448-20170726-1620"
+
+f="/tmp/ker448-20170727-1220"
+
+f="/tmp/ker448-20170727-1425"
+
+cp .config $f
+
+
+
+cp $f .config 
+
+make KCONFIG_ALLCONFIG=$f alldefconfig
+
+
+make menuconfig
+
+
+proxychains -f /root/proxychains.conf \
+emerge =sys-kernel/hardened-sources-4.4.8-r1
+
+# 
+tail -f /tmp/wd/var/log/emerge-fetch.log
+
+proxychains -f /root/proxychains.conf \
+emerge -pv google-chrome 
+
 *** Weston [2017-07-26 Wed 14:31]
 
 
@@ -262,6 +358,12 @@ make KCONFIG_ALLCONFIG=$f alldefconfig
 
 time nice -10 \
 make -j 6 && make modules_install
+
+real    3m41.541s
+user    12m43.914s
+sys     0m57.377s
+
+
 
 real    3m39.935s
 user    12m45.799s
@@ -4920,6 +5022,16 @@ $p \
 -C $w/usr \
 --xattrs
 
+
+[2017-07-27 Thu 12:02] stage4_pro_ker448_20170726.tar.xz
+
+real    0m26.399s
+user    0m26.145s
+sys     0m6.887s
+
+
+
+
 [2017-07-26 Wed 14:30]
 
 
@@ -5322,6 +5434,29 @@ fi
 
 blkid | grep sdd
 
+
+[2017-07-27 Thu 14:46]
+
+/dev/sdd2: UUID="24e3087d-c152-466a-b511-da117afc035e" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="fb2492c3-645d-490a-914d-b0e305e94c65" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=fb2492c3-645d-490a-914d-b0e305e94c65   /            ext4    noatime              0 1
+UUID=24e3087d-c152-466a-b511-da117afc035e   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
+
+
 [2017-07-27 Thu 08:39]
 
 /dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
@@ -5523,7 +5658,7 @@ grub-install /dev/sdd
 # add rootwait
 sed -i 's/#GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="rootwait"/' /etc/default/grub 
 
-sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="rootwait"/GRUB_CMDLINE_LINUX_DEFAULT="rootwait nouveau.modeset=0"/' /etc/default/grub 
+# sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="rootwait"/GRUB_CMDLINE_LINUX_DEFAULT="rootwait nouveau.modeset=0"/' /etc/default/grub 
 
 cat /etc/default/grub | grep GRUB_CMDLINE_LINUX_DEFAULT
 
@@ -5569,6 +5704,13 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+[2017-07-27 Thu 14:56] stage4_pro_ker448_weston_grub_20170727.tar.xz
+
+real    9m44.161s
+user    0m34.460s
+sys     0m12.532s
+
 
 [2017-07-26 Wed 16:50]  stage4_pro_ker448_weston_grub_20170726.tar.xz
 
@@ -7062,6 +7204,18 @@ cat <<EOF >  /tmp/stage4.excl
 EOF
 
 cat /tmp/stage4.excl
+
+time nice -10 \
+tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_pro_ker448_weston_grub_20170727.tar.xz
+
+real    8m15.571s
+user    28m17.956s
+sys     0m7.213s
+
+
+
+
+
 
 time nice -10 \
 tar -X /tmp/stage4.excl -c / | xz -9vT4  > /tmp/stage4_pro_ker448_weston_grub_20170726.tar.xz
@@ -8714,7 +8868,8 @@ PORTAGE_NICENESS=10
 
 GENTOO_MIRRORS="http://ftp.twaren.net/Linux/Gentoo/ http://ftp.jaist.ac.jp/pub/Linux/Gentoo/ http://ftp.iij.ad.jp/pub/linux/gentoo/"
 
-INPUT_DEVICES="evdev"
+# INPUT_DEVICES="evdev"
+INPUT_DEVICES="libinput" 
 
 VIDEO_CARDS="nouveau intel i915"
 
@@ -8739,6 +8894,18 @@ cp /tmp/wy/usr/share/portage/config/repos.conf /tmp/wy/etc/portage/repos.conf/ge
 sed -i 's/rsync.gentoo/rsync.tw.gentoo/' /tmp/wy/etc/portage/repos.conf/gentoo.conf
 
 sed  '' /tmp/wy/etc/portage/repos.conf/gentoo.conf
+
+
+
+mkdir /etc/portage/repos.conf
+
+cp /usr/share/portage/config/repos.conf /etc/portage/repos.conf/gentoo.conf
+
+
+sed -i 's/rsync.gentoo/rsync.tw.gentoo/' /etc/portage/repos.conf/gentoo.conf
+
+sed  '' /etc/portage/repos.conf/gentoo.conf
+
 
 
 cp -L /etc/resolv.conf /tmp/wy/etc/

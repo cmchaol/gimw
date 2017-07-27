@@ -50,6 +50,9 @@
 |----------------------+-----------------------------------------------|
 |                      | stage4_pro_ker448_weston_grub_20170726.tar.xz |
 |                      |                                               |
+|                      |                                               |
+
+
 
 
 f="/tmp/ker448-20170726-1500"
@@ -277,7 +280,7 @@ sys     0m42.895s
 
 KERNELVER=4.4.8-hardened-r1-nouveau
 
-EXTENSION=20170726
+EXTENSION=20170727
 
 cp .config /boot/config-${KERNELVER}-${EXTENSION}
 cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
@@ -5475,7 +5478,7 @@ export PS1="(chroot) $PS1"
 
 mount -o size=90%,noatime,nodiratime -t tmpfs tmpfs /tmp
 
-mkdir /var/tmp/portage
+# mkdir /var/tmp/portage
 
 mount -o size=90%,noatime,nodiratime,uid=portage,gid=portage,mode=775 -t tmpfs tmpfs /var/tmp/portage 
 
@@ -5537,9 +5540,11 @@ echo $w
 # sdd
 mount /dev/sdd4 $w
 
-mkdir $w/boot
+# mkdir $w/boot
 
 mount /dev/sdd2 $w/boot
+
+lsblk
 
 
 # sdb

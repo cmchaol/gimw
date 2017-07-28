@@ -112,6 +112,8 @@ emerge -pv google-chrome
 proxychains -f /root/proxychains.conf \
 emerge -pv dev-vcs/git
 
+https://wayland.freedesktop.org/xserver.html
+
 
 
 

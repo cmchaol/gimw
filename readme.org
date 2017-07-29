@@ -2,6 +2,10 @@
 
 ** kernel and package build
 
+*** chrome [2017-07-29 Sat 17:42]
+
+   SECCOMP_FILTER is required for sandbox to work
+   CONFIG_ADVISE_SYSCALLS is required for the renderer (bug #552576)
 
 
 *** Weston [2017-07-28 Fri 11:25]
@@ -507,9 +511,9 @@ user    10m25.983s
 sys     0m42.895s
 
 
-KERNELVER=4.4.8-hardened-r1-nouveau
+KERNELVER=4.4.8-hardened-r1-nouveau-chrome
 
-EXTENSION=20170727
+EXTENSION=20170729
 
 cp .config /boot/config-${KERNELVER}-${EXTENSION}
 cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}

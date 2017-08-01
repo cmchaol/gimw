@@ -1,6 +1,14 @@
 * scenarios
 
-** 
+** Catalyst
+
+https://wiki.gentoo.org/wiki/Catalyst
+
+emerge --ask dev-util/catalyst
+
+/etc/catalyst/catalyst.conf
+
+
 
 ** kernel and package build
 

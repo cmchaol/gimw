@@ -2,6 +2,29 @@
 
 ** Catalyst
 
+*** docker plan
+
+| build catalyst image |
+|                      |
+
+
+docker attach 
+
+*** gentoo/stage3-amd64-hardened 
+
+docker run -t -i gentoo/stage3-amd64-hardened  /bin/bash
+
+emerge --sync
+
+emerge --ask dev-util/catalyst
+
+
+
+
+
+*** reference
+
+
 https://wiki.gentoo.org/wiki/Catalyst
 
 emerge --ask dev-util/catalyst

@@ -2,6 +2,130 @@
 
 ** Catalyst
 
+*** exercise 
+
+**** Specs
+
+s1="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage1.spec"
+
+s2="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage2.spec"
+
+s3="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage3.spec"
+
+wget -P /tmp/catalyst/builds/default/ $s1
+
+wget -P /tmp/catalyst/builds/default/ $s2
+
+wget -P /tmp/catalyst/builds/default/ $s3
+
+cd /tmp/catalyst/builds/default/
+
+ls
+
+catalyst -f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
+
+ catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+
+
+https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage4-minimal.spec
+     
+**** adjust storedir to /tmp
+
+cat /etc/catalyst/catalyst.conf
+
+
+# storedir specifies where catalyst will store everything that it builds, and
+# also where it will put its temporary files and caches.
+storedir="/var/tmp/catalyst"
+
+
+f="/etc/catalyst/catalyst.conf"
+
+echo $f
+
+cp $f /tmp
+
+sed 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f > $f.new
+
+sed 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f > /etc/catalyst/catalyst.conf
+
+sed 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f | grep storedir
+
+
+cat $f.new | grep storedir
+
+cp $f.new $f
+
+
+cat $f | grep storedir
+
+mkdir -p /tmp/catalyst/builds/default
+
+
+**** download stage3, snapshot
+
+
+p1="http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64/hardened/"
+
+p2="http://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
+
+
+p3=$( wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' )
+
+p4=$( echo $p3 | awk 'BEGIN{FS="/"}{print $3}' )
+
+echo $p1$p4
+
+
+wget $p1$p4 -P /tmp/catalyst/builds/default/
+
+wget -P /tmp/catalyst/builds/default/  http://distfiles.gentoo.org/snapshots/portage-latest.tar.bz2
+
+
+# #############
+
+
+http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64/hardened/
+
+
+http://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt
+
+
+
+
+p1="http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64/hardened/"
+
+p2="http://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
+
+
+wget -O - -o /dev/null $p2 
+
+
+wget -O - -o /dev/null $p2 | awk '/stage/{print $1}'
+
+
+p3=$( wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' )
+
+
+
+wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' | awk 'BEGIN{FS="/"}{print $3}'
+
+
+echo $p3 | awk 'BEGIN{FS="/"}{print $3}'
+
+
+p4=$( echo $p3 | awk 'BEGIN{FS="/"}{print $3}' )
+
+p3=( wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' | awk 'BEGIN{FS="/"}{print $3}' )
+
+
+echo $p1$p4
+
+
+
+
+
+
 *** docker plan
 
 | build catalyst image |
@@ -10,16 +134,39 @@
 
 docker attach 
 
-*** gentoo/stage3-amd64-hardened 
 
-docker run -t -i gentoo/stage3-amd64-hardened  /bin/bash
-
-emerge --sync
-
-emerge --ask dev-util/catalyst
+*** gentoo/stage3-amd64-hardened  emerge dev-util/catalyst
 
 
+dt="/tmp/dockertest"
 
+mkdir $dt
+
+
+docker create -v /usr/portage --name myportage gentoo/portage
+
+
+docker run --volumes-from myportage \
+-v $dt:/tmp \
+--name gentoo -it gentoo/stage3-amd64-hardened /bin/bash
+
+# emerge --ask dev-util/catalyst
+
+emerge dev-util/catalyst
+
+
+|                     |
+| working lists       |
+|                     |
+| projects path       |
+|                     |
+| docker              |
+|                     |
+| steps emerge kernel |
+|                     |
+| 10 dply             |
+|                     |
+| 22                  |
 
 
 *** reference

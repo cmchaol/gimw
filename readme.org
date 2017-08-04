@@ -11,6 +11,30 @@ docker attach
 | autobuild |
 |           |
 
+**** Dockerfiles v1
+
+| place the cursor inside source blocks |
+|                                       |
+| C-u C-c C-v t                         |
+
+
+#+HEADER:  :tangle Dockerfiles/v1
+#+BEGIN_SRC sh
+
+This is a test. v1.
+
+#+END_SRC
+
+https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/v1
+
+
+f="https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/v1"
+
+wget -O - -o /dev/null $f
+
+
+
+
 **** publishing to folder Dockerfiles
 
 | place the cursor inside source blocks |
@@ -24,6 +48,13 @@ docker attach
 This is a test.
 
 #+END_SRC
+
+https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/test
+
+
+f="https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/test"
+
+wget -O - -o /dev/null $f
 
 
 

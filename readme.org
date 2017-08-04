@@ -11,11 +11,42 @@ docker attach
 | autobuild |
 |           |
 
+**** Dockerfiles v2
+
+| place the cursor inside source blocks |
+|                                       |
+| C-u C-c C-v t                         |
+|                                       |
+| git push                              |
+|                                       |
+| test with wget                        |
+
+
+#+HEADER:  :tangle Dockerfiles/v2
+#+BEGIN_SRC sh
+FROM gentoo/stage3-amd64-hardened
+
+RUN emerge-webrsync; \
+    emerge dev-util/catalyst
+#+END_SRC
+
+f="https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/v2"
+
+wget -O - -o /dev/null $f
+
+
+
+
+
 **** Dockerfiles v1
 
 | place the cursor inside source blocks |
 |                                       |
 | C-u C-c C-v t                         |
+|                                       |
+| git push                              |
+|                                       |
+| test with wget                        |
 
 
 #+HEADER:  :tangle Dockerfiles/v1
@@ -24,9 +55,6 @@ docker attach
 This is a test. v1.
 
 #+END_SRC
-
-https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/v1
-
 
 f="https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/v1"
 

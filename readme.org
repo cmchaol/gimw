@@ -2,6 +2,31 @@
 
 ** Catalyst
 
+*** a docker for gentoo catalyst
+
+docker attach 
+
+| dply      |
+|           |
+| autobuild |
+|           |
+
+**** publishing to folder Dockerfiles
+
+| place the cursor inside source blocks |
+|                                       |
+| C-u C-c C-v t                         |
+
+
+#+HEADER:  :tangle Dockerfiles/test
+#+BEGIN_SRC sh
+
+This is a test.
+
+#+END_SRC
+
+
+
 *** exercise 
 
 **** Specs
@@ -123,18 +148,6 @@ echo $p1$p4
 
 
 
-
-
-
-*** docker plan
-
-| build catalyst image |
-|                      |
-
-
-docker attach 
-
-
 *** gentoo/stage3-amd64-hardened  emerge dev-util/catalyst
 
 
@@ -177,6 +190,127 @@ https://wiki.gentoo.org/wiki/Catalyst
 emerge --ask dev-util/catalyst
 
 /etc/catalyst/catalyst.conf
+
+** docker
+
+*** pallavagarwal07/gentoo-stabilization
+
+https://hub.docker.com/r/pallavagarwal07/gentoo-stabilization/~/dockerfile/
+
+FROM gentoo/stage3-amd64
+RUN mkdir -p /root/build; \
+    mkdir /usr/portage; \
+    emerge-webrsync; \
+    eselect python set python2.7; \
+    echo 'MAKEOPTS="-j4"' >> /etc/portage/make.conf; \
+    emerge --autounmask-write dev-vcs/git \
+                              dev-python/numpy \
+                              dev-python/requests \
+                              app-portage/portage-utils; \
+    yes | etc-update --automode -3; \
+    emerge --autounmask-write dev-vcs/git \
+                              dev-python/numpy \
+                              dev-python/requests \
+                              app-portage/portage-utils; \
+    easy_install satispy; \
+    easy_install pycosat; \
+    cd /usr/portage; \
+    rm -rf `ls -1A | grep -vP '^profiles'`;
+COPY scripts/ControlContainer/*.py scripts/ControlContainer/*.sh /root/
+COPY etc_portage /etc/portage/
+CMD ["/root/logger.sh"]
+
+
+
+*** basic Docker commands
+
+
+
+docker build -t friendlyname .  # Create image using this directory's Dockerfile
+docker run -p 4000:80 friendlyname  # Run "friendlyname" mapping port 4000 to 80
+docker run -d -p 4000:80 friendlyname         # Same thing, but in detached mode
+docker ps                                 # See a list of all running containers
+docker stop <hash>                     # Gracefully stop the specified container
+docker ps -a           # See a list of all containers, even the ones not running
+docker kill <hash>                   # Force shutdown of the specified container
+docker rm <hash>              # Remove the specified container from this machine
+docker rm $(docker ps -a -q)           # Remove all containers from this machine
+docker images -a                               # Show all images on this machine
+docker rmi <imagename>            # Remove the specified image from this machine
+docker rmi $(docker images -q)             # Remove all images from this machine
+docker login             # Log in this CLI session using your Docker credentials
+docker tag <image> username/repository:tag  # Tag <image> for upload to registry
+docker push username/repository:tag            # Upload tagged image to registry
+docker run username/repository:tag                   # Run image from a registry
+
+https://docs.docker.com/get-started/part2/#recap-and-cheat-sheet-optional
+
+
+*** Dockerfile
+
+| build                                           |
+|                                                 |
+| create an empty directory                       |
+|                                                 |
+| cd inside it                                    |
+|                                                 |
+| create a file called Dockerfile                 |
+|                                                 |
+| run the build command                           |
+| docker build -t friendlyhello .                 |
+|                                                 |
+|-------------------------------------------------|
+| run                                             |
+|                                                 |
+| docker run -p 4000:80 friendlyhello             |
+|                                                 |
+| exit docker                                     |
+| CTRL+C to quit                                  |
+|                                                 |
+| docker stop 1fa4ab2cf395                        |
+|-------------------------------------------------|
+| upload                                          |
+|                                                 |
+| docker login                                    |
+|                                                 |
+| Tag the image                                   |
+| docker tag image username/repository:tag        |
+| docker tag friendlyhello john/get-started:part1 |
+|                                                 |
+| Upload                                          |
+| docker push username/repository:tag             |
+|-------------------------------------------------|
+| pull and run                                    |
+|                                                 |
+| docker run -p 4000:80 john/get-started:part1    |
+|                                                 |
+|                                                 |
+
+
+  https://docs.docker.com/get-started/part2/#define-a-container-with-a-dockerfile
+
+# Use an official Python runtime as a parent image
+FROM python:2.7-slim
+
+# Set the working directory to /app
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+ADD . /app
+
+# Install any needed packages specified in requirements.txt
+RUN pip install -r requirements.txt
+
+# Make port 80 available to the world outside this container
+EXPOSE 80
+
+# Define environment variable
+ENV NAME World
+
+# Run app.py when the container launches
+CMD ["python", "app.py"]
+
+Create two more files, requirements.txt and app.py, and put them in the same folder with the Dockerfile. 
 
 
 

@@ -11,6 +11,11 @@ docker attach
 | autobuild |
 |           |
 
+**** docker run from v2
+
+docker run --name catalyst -it c5766/docker-gentoo-catalyst:v2 /bin/bash 
+
+
 **** Dockerfiles v2
 
 | place the cursor inside source blocks |
@@ -36,6 +41,21 @@ wget -O - -o /dev/null $f
 
 
 
+d="/tmp/v2"
+
+mkdir $d
+
+wget -O $d/Dockerfile $f
+
+cd $d
+
+docker build -t docker-gentoo-catalyst-v2 .
+
+docker login
+
+docker tag docker-gentoo-catalyst-v2 c5766/docker-gentoo-catalyst:v2
+
+docker push c5766/docker-gentoo-catalyst:v2
 
 
 **** Dockerfiles v1
@@ -87,33 +107,44 @@ wget -O - -o /dev/null $f
 
 
 *** exercise 
-
-**** Specs
-
-s1="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage1.spec"
-
-s2="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage2.spec"
-
-s3="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage3.spec"
-
-wget -P /tmp/catalyst/builds/default/ $s1
-
-wget -P /tmp/catalyst/builds/default/ $s2
-
-wget -P /tmp/catalyst/builds/default/ $s3
-
-cd /tmp/catalyst/builds/default/
-
-ls
-
-catalyst -f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
-
- catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
-
-
-https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage4-minimal.spec
      
+
 **** adjust storedir to /tmp
+
+| default configuration file | /etc/catalyst/catalyst.conf | $f1 |
+|----------------------------+-----------------------------+-----|
+| new                        | cp $f1 /tmp                 |     |
+|                            | /tmp/catalyst.conf          | $f2 |
+
+
+f1="/etc/catalyst/catalyst.conf"
+
+echo $f1
+
+cp $f1 /tmp
+
+f2="/tmp/catalyst.conf"
+
+# cat $f2 | egrep 'storedir|snapshot_cache'
+
+cat $f2 | grep storedir
+
+cat $f2 | grep snapshot_cache
+
+|                | default                          | change to     |
+|----------------+----------------------------------+---------------|
+| storedir       | /var/tmp/catalyst                | /tmp/catalyst |
+|                |                                  |               |
+| snapshot_cache | /var/tmp/catalyst/snapshot_cache | /tmp/catalyst |
+|                |                                  |               |
+
+
+sed -i 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f2
+sed -i 's%^snapshot_cache="/var/tmp/catalyst/snapshot_cache"%snapshot_cache="/tmp/catalyst"%' $f2
+cat $f2 | grep storedir
+cat $f2 | grep snapshot_cache
+
+
 
 cat /etc/catalyst/catalyst.conf
 
@@ -127,13 +158,15 @@ f="/etc/catalyst/catalyst.conf"
 
 echo $f
 
+cat $f | grep storedir
+
 cp $f /tmp
 
 sed 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f > $f.new
 
-sed 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f > /etc/catalyst/catalyst.conf
+# sed 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f > /etc/catalyst/catalyst.conf
 
-sed 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f | grep storedir
+# sed 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f | grep storedir
 
 
 cat $f.new | grep storedir
@@ -204,6 +237,36 @@ p3=( wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' | awk 'BEGIN{FS="/"}{p
 
 
 echo $p1$p4
+
+
+
+**** Specs
+
+s1="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage1.spec"
+
+s2="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage2.spec"
+
+s3="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage3.spec"
+
+wget -P /tmp/catalyst/builds/default/ $s1
+
+wget -P /tmp/catalyst/builds/default/ $s2
+
+wget -P /tmp/catalyst/builds/default/ $s3
+
+cd /tmp/catalyst/builds/default/
+
+ls
+
+catalyst -f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
+
+catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+
+
+
+
+
+https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage4-minimal.spec
 
 
 

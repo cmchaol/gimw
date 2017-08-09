@@ -2,6 +2,31 @@
 
 ** Catalyst
 
+*** respsitory
+
+|   | docker hub            | github |
+|---+-----------------------+--------|
+|   | c5766/gentoo-catalyst |        |
+|   |                       |        |
+|   |                       | ms4    |
+|   |                       |        |
+
+
+****  git@github.com:cmchaol/ms4.git
+
+
+#+HEADERS: :dir /tmp
+#+BEGIN_SRC sh
+
+git clone git@github.com:cmchaol/ms4.git
+cd ms4
+git config user.email "cmchaol@users.noreply.github.com"
+git config user.name "cmchaol"
+
+#+END_SRC
+
+
+
 *** a docker for gentoo catalyst
 
 docker attach 
@@ -148,6 +173,139 @@ https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/test
 f="https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/test"
 
 wget -O - -o /dev/null $f
+
+
+
+*** exercise [2017-08-09 Wed 07:32]
+     
+
+docker run --cap-add SYS_ADMIN -it c5766/gentoo-catalyst:v.2 /bin/bash 
+
+
+**** adjust storedir to /root
+
+| default configuration file | /etc/catalyst/catalyst.conf | $f1 |
+|----------------------------+-----------------------------+-----|
+| new                        | cp $f1 /root                |     |
+|                            | /root/catalyst.conf         | $f2 |
+
+
+f1="/etc/catalyst/catalyst.conf"
+
+echo $f1
+
+cp $f1 /root
+
+f2="/root/catalyst.conf"
+
+cat $f2 | grep storedir
+
+|           | storedir          |
+|-----------+-------------------|
+| default   | /var/tmp/catalyst |
+|           |                   |
+| change to | /root/catalyst    |
+
+
+sed -i 's%^storedir="/var/tmp/catalyst"%storedir="/root/catalyst"%' $f2
+
+cat $f2 | grep storedir
+
+
+**** download stage3, snapshot
+
+
+p1="http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64/hardened/"
+
+p2="http://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
+
+
+p3=$( wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' )
+
+p4=$( echo $p3 | awk 'BEGIN{FS="/"}{print $3}' )
+
+echo $p1$p4
+
+
+# wget $p1$p4 -P /tmp/catalyst/builds/default/
+
+mkdir -p /root/catalyst/builds/hardened/ 
+
+wget $p1$p4 -O /root/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+
+
+mkdir -p /root/catalyst/snapshots
+
+wget -P /root/catalyst/snapshots http://distfiles.gentoo.org/snapshots/portage-latest.tar.bz2
+
+
+| stage3   | root/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2 |
+|          |                                                                    |
+| snapshot | root/catalyst/snapshots/portage-latest.tar.bz2                     |
+
+
+**** Specs
+
+s1="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage1.spec"
+s2="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage2.spec"
+s3="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage3.spec"
+wget -P /root/catalyst/builds/default/ $s1
+wget -P /root/catalyst/builds/default/ $s2
+wget -P /root/catalyst/builds/default/ $s3
+cd /root/catalyst/builds/default/
+ls
+
+sed -i 's/^portage_confdir/# portage_confdir/' stage1.spec
+sed -i 's/^portage_confdir/# portage_confdir/' stage2.spec
+sed -i 's/^portage_confdir/# portage_confdir/' stage3.spec
+
+cat stage1.spec
+
+
+
+https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage4-minimal.spec
+
+
+
+**** debuging [2017-08-07 Mon 09:05]
+
+# echo $f2
+
+catalyst -c $f2 \
+-f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
+
+
+# ###################
+
+tar: SELinux support is not available
+tar: setxattrat: Cannot set 'user.pax.flags' extended attribute for file './usr/bin/python3.4m': Operation not supported
+tar: setxattrat: Cannot set 'user.pax.flags' extended attribute for file './usr/bin/python2.7': Operation not supported
+
+
+Source path set to /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+Caching snapshot to /tmp/catalyst/latest/
+The autoresume path is /tmp/catalyst/tmp/hardened/.autoresume-stage1-amd64-hardened-latest/
+stage1 stage path is /tmp/catalyst/tmp/hardened/stage1-amd64-hardened-latest/tmp/stage1root
+
+!!! catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+
+mount: permission denied
+
+!!! catalyst: Couldn't bind mount /proc
+
+docker run --cap-add SYS_ADMIN
+
+https://github.com/moby/moby/issues/9950
+
+
+catalyst -f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
+
+catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+
+
+       --config|-c FILE
+           Tell catalyst to use a user-defined configuration file. A sample configuration file is installed at /etc/catalyst/catalyst.conf.
+
 
 
 

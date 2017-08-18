@@ -1,897 +1,12 @@
 * scenarios
 
-** git@github.com:cmchaol/giid.git
-
-#+HEADERS: :dir /tmp
-#+BEGIN_SRC sh
-
-git clone git@github.com:cmchaol/giid.git
-cd giid
-git config user.email "cmchaol@users.noreply.github.com"
-git config user.name "cmchaol"
-
-#+END_SRC
-
-#+RESULTS:
-
- https://github.com/cmchaol/giid
-
-…or create a new repository on the command line
-￼
-echo "# giid" >> README.md
-git init
-git add README.md
-git commit -m "first commit"
-git remote add origin git@github.com:cmchaol/giid.git
-git push -u origin master
-…or push an existing repository from the command line
-￼
-git remote add origin git@github.com:cmchaol/giid.git
-git push -u origin master
-…or import code from another repository
-You can initialize this repository with code from a Subversion, Mercurial, or TFS project.
- 
-      
-
-
-
-** Catalyst
-
-*** respsitory
-
-|   | docker hub            | github |
-|---+-----------------------+--------|
-|   | c5766/gentoo-catalyst |        |
-|   |                       |        |
-|   |                       | ms4    |
-|   |                       |        |
-
-
-****  git@github.com:cmchaol/ms4.git
-
-
-#+HEADERS: :dir /tmp
-#+BEGIN_SRC sh
-
-git clone git@github.com:cmchaol/ms4.git
-cd ms4
-git config user.email "cmchaol@users.noreply.github.com"
-git config user.name "cmchaol"
-
-#+END_SRC
-
-#+RESULTS:
-
-
-
-*** a docker for gentoo catalyst
-
-docker attach 
-
-| dply      |
-|           |
-| autobuild |
-|           |
-
-**** docker run from v2
-
-docker run --name catalyst -it c5766/docker-gentoo-catalyst:v2 /bin/bash 
-
-docker run --cap-add SYS_ADMIN --name catalyst -it c5766/docker-gentoo-catalyst:v2 /bin/bash 
-
-
-**** Dockerfiles v3
-
-| place the cursor inside source blocks |
-|                                       |
-| C-u C-c C-v t                         |
-|                                       |
-| git push                              |
-|                                       |
-| test with wget                        |
-
-
-#+HEADER:  :tangle Dockerfiles/v2
-#+BEGIN_SRC sh
-FROM gentoo/stage3-amd64-hardened
-
-RUN emerge-webrsync; \
-    emerge dev-util/catalyst
-#+END_SRC
-
-f="https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/v2"
-
-wget -O - -o /dev/null $f
-
-
-
-d="/tmp/v2"
-
-mkdir $d
-
-wget -O $d/Dockerfile $f
-
-cd $d
-
-docker build -t docker-gentoo-catalyst-v2 .
-
-docker login
-
-docker tag docker-gentoo-catalyst-v2 c5766/docker-gentoo-catalyst:v3
-
-docker push c5766/docker-gentoo-catalyst:v3
-
-
-
-**** Dockerfiles v2
-
-| place the cursor inside source blocks |
-|                                       |
-| C-u C-c C-v t                         |
-|                                       |
-| git push                              |
-|                                       |
-| test with wget                        |
-
-
-#+HEADER:  :tangle Dockerfiles/v2
-#+BEGIN_SRC sh
-FROM gentoo/stage3-amd64-hardened
-
-RUN emerge-webrsync; \
-    emerge dev-util/catalyst
-#+END_SRC
-
-f="https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/v2"
-
-wget -O - -o /dev/null $f
-
-
-
-d="/tmp/v2"
-
-mkdir $d
-
-wget -O $d/Dockerfile $f
-
-cd $d
-
-docker build -t docker-gentoo-catalyst-v2 .
-
-docker login
-
-docker tag docker-gentoo-catalyst-v2 c5766/docker-gentoo-catalyst:v2
-
-docker push c5766/docker-gentoo-catalyst:v2
-
-
-**** Dockerfiles v1
-
-| place the cursor inside source blocks |
-|                                       |
-| C-u C-c C-v t                         |
-|                                       |
-| git push                              |
-|                                       |
-| test with wget                        |
-
-
-#+HEADER:  :tangle Dockerfiles/v1
-#+BEGIN_SRC sh
-
-This is a test. v1.
-
-#+END_SRC
-
-f="https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/v1"
-
-wget -O - -o /dev/null $f
-
-
-
-
-**** publishing to folder Dockerfiles
-
-| place the cursor inside source blocks |
-|                                       |
-| C-u C-c C-v t                         |
-
-
-#+HEADER:  :tangle Dockerfiles/test
-#+BEGIN_SRC sh
-
-This is a test.
-
-#+END_SRC
-
-https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/test
-
-
-f="https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/test"
-
-wget -O - -o /dev/null $f
-
-
-
-*** exercise [2017-08-09 Wed 07:32]
-     
-
-docker run --cap-add SYS_ADMIN -it c5766/gentoo-catalyst:v.2 /bin/bash 
-
-
-**** adjust storedir to /root
-
-| default configuration file | /etc/catalyst/catalyst.conf | $f1 |
-|----------------------------+-----------------------------+-----|
-| new                        | cp $f1 /root                |     |
-|                            | /root/catalyst.conf         | $f2 |
-
-
-f1="/etc/catalyst/catalyst.conf"
-
-echo $f1
-
-cp $f1 /root
-
-f2="/root/catalyst.conf"
-
-cat $f2 | grep storedir
-
-|           | storedir          |
-|-----------+-------------------|
-| default   | /var/tmp/catalyst |
-|           |                   |
-| change to | /root/catalyst    |
-
-
-sed -i 's%^storedir="/var/tmp/catalyst"%storedir="/root/catalyst"%' $f2
-
-cat $f2 | grep storedir
-
-
-**** download stage3, snapshot
-
-
-p1="http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64/hardened/"
-
-p2="http://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
-
-
-p3=$( wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' )
-
-p4=$( echo $p3 | awk 'BEGIN{FS="/"}{print $3}' )
-
-echo $p1$p4
-
-
-# wget $p1$p4 -P /tmp/catalyst/builds/default/
-
-mkdir -p /root/catalyst/builds/hardened/ 
-
-wget $p1$p4 -O /root/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
-
-
-mkdir -p /root/catalyst/snapshots
-
-wget -P /root/catalyst/snapshots http://distfiles.gentoo.org/snapshots/portage-latest.tar.bz2
-
-
-| stage3   | root/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2 |
-|          |                                                                    |
-| snapshot | root/catalyst/snapshots/portage-latest.tar.bz2                     |
-
-
-**** Specs
-
-s1="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage1.spec"
-s2="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage2.spec"
-s3="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage3.spec"
-wget -P /root/catalyst/builds/default/ $s1
-wget -P /root/catalyst/builds/default/ $s2
-wget -P /root/catalyst/builds/default/ $s3
-cd /root/catalyst/builds/default/
-ls
-
-sed -i 's/^portage_confdir/# portage_confdir/' stage1.spec
-sed -i 's/^portage_confdir/# portage_confdir/' stage2.spec
-sed -i 's/^portage_confdir/# portage_confdir/' stage3.spec
-
-cat stage1.spec
-
-
-
-https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage4-minimal.spec
-
-
-
-**** debuging [2017-08-07 Mon 09:05]
-
-# echo $f2
-
-catalyst -c $f2 \
--f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
-
-
-# ###################
-
-tar: SELinux support is not available
-tar: setxattrat: Cannot set 'user.pax.flags' extended attribute for file './usr/bin/python3.4m': Operation not supported
-tar: setxattrat: Cannot set 'user.pax.flags' extended attribute for file './usr/bin/python2.7': Operation not supported
-
-
-Source path set to /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
-Caching snapshot to /tmp/catalyst/latest/
-The autoresume path is /tmp/catalyst/tmp/hardened/.autoresume-stage1-amd64-hardened-latest/
-stage1 stage path is /tmp/catalyst/tmp/hardened/stage1-amd64-hardened-latest/tmp/stage1root
-
-!!! catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
-
-mount: permission denied
-
-!!! catalyst: Couldn't bind mount /proc
-
-docker run --cap-add SYS_ADMIN
-
-https://github.com/moby/moby/issues/9950
-
-
-catalyst -f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
-
-catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
-
-
-       --config|-c FILE
-           Tell catalyst to use a user-defined configuration file. A sample configuration file is installed at /etc/catalyst/catalyst.conf.
-
-
-
-
-*** exercise [2017-08-07 Mon 10:39]
-     
-
-**** adjust storedir to /root
-
-| default configuration file | /etc/catalyst/catalyst.conf | $f1 |
-|----------------------------+-----------------------------+-----|
-| new                        | cp $f1 /root                |     |
-|                            | /root/catalyst.conf         | $f2 |
-
-
-f1="/etc/catalyst/catalyst.conf"
-
-echo $f1
-
-cp $f1 /root
-
-f2="/root/catalyst.conf"
-
-cat $f2 | grep storedir
-
-|           | storedir          |
-|-----------+-------------------|
-| default   | /var/tmp/catalyst |
-|           |                   |
-| change to | /root/catalyst    |
-
-
-sed -i 's%^storedir="/var/tmp/catalyst"%storedir="/root/catalyst"%' $f2
-
-cat $f2 | grep storedir
-
-
-**** download stage3, snapshot
-
-
-p1="http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64/hardened/"
-
-p2="http://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
-
-
-p3=$( wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' )
-
-p4=$( echo $p3 | awk 'BEGIN{FS="/"}{print $3}' )
-
-echo $p1$p4
-
-
-# wget $p1$p4 -P /tmp/catalyst/builds/default/
-
-mkdir -p /root/catalyst/builds/hardened/ 
-
-wget $p1$p4 -O /root/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
-
-
-mkdir -p /root/catalyst/snapshots
-
-wget -P /root/catalyst/snapshots http://distfiles.gentoo.org/snapshots/portage-latest.tar.bz2
-
-
-| stage3   | root/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2 |
-|          |                                                                    |
-| snapshot | root/catalyst/snapshots/portage-latest.tar.bz2                     |
-
-
-**** Specs
-
-s1="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage1.spec"
-s2="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage2.spec"
-s3="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage3.spec"
-wget -P /root/catalyst/builds/default/ $s1
-wget -P /root/catalyst/builds/default/ $s2
-wget -P /root/catalyst/builds/default/ $s3
-cd /root/catalyst/builds/default/
-ls
-
-sed -i 's/^portage_confdir/# portage_confdir/' stage1.spec
-sed -i 's/^portage_confdir/# portage_confdir/' stage2.spec
-sed -i 's/^portage_confdir/# portage_confdir/' stage3.spec
-
-cat stage1.spec
-
-
-
-https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage4-minimal.spec
-
-
-
-**** debuging [2017-08-07 Mon 09:05]
-
-# echo $f2
-
-catalyst -c $f2 \
--f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
-
-
-# ###################
-
-tar: SELinux support is not available
-tar: setxattrat: Cannot set 'user.pax.flags' extended attribute for file './usr/bin/python3.4m': Operation not supported
-tar: setxattrat: Cannot set 'user.pax.flags' extended attribute for file './usr/bin/python2.7': Operation not supported
-
-
-Source path set to /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
-Caching snapshot to /tmp/catalyst/latest/
-The autoresume path is /tmp/catalyst/tmp/hardened/.autoresume-stage1-amd64-hardened-latest/
-stage1 stage path is /tmp/catalyst/tmp/hardened/stage1-amd64-hardened-latest/tmp/stage1root
-
-!!! catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
-
-mount: permission denied
-
-!!! catalyst: Couldn't bind mount /proc
-
-docker run --cap-add SYS_ADMIN
-
-https://github.com/moby/moby/issues/9950
-
-
-catalyst -f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
-
-catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
-
-
-       --config|-c FILE
-           Tell catalyst to use a user-defined configuration file. A sample configuration file is installed at /etc/catalyst/catalyst.conf.
-
-
-
-*** exercise 
-     
-
-**** adjust storedir to /tmp
-
-| default configuration file | /etc/catalyst/catalyst.conf | $f1 |
-|----------------------------+-----------------------------+-----|
-| new                        | cp $f1 /tmp                 |     |
-|                            | /tmp/catalyst.conf          | $f2 |
-
-
-f1="/etc/catalyst/catalyst.conf"
-
-echo $f1
-
-cp $f1 /tmp
-
-f2="/tmp/catalyst.conf"
-
-# cat $f2 | egrep 'storedir|snapshot_cache'
-
-cat $f2 | grep storedir
-
-cat $f2 | grep snapshot_cache
-
-|                  | default                          | change to     |
-|------------------+----------------------------------+---------------|
-| storedir         | /var/tmp/catalyst                | /tmp/catalyst |
-|                  |                                  |               |
-| # snapshot_cache | /var/tmp/catalyst/snapshot_cache | /tmp/catalyst |
-|                  |                                  |               |
-
-
-sed -i 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f2
-
-# sed -i 's%^snapshot_cache="/var/tmp/catalyst/snapshot_cache"%snapshot_cache="/tmp/catalyst"%' $f2
-
-cat $f2 | grep storedir
-
-# cat $f2 | grep snapshot_cache
-
-# ###################
-
-cat /etc/catalyst/catalyst.conf
-
-
-# storedir specifies where catalyst will store everything that it builds, and
-# also where it will put its temporary files and caches.
-storedir="/var/tmp/catalyst"
-
-
-f="/etc/catalyst/catalyst.conf"
-
-echo $f
-
-cat $f | grep storedir
-
-cp $f /tmp
-
-sed 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f > $f.new
-
-# sed 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f > /etc/catalyst/catalyst.conf
-
-# sed 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f | grep storedir
-
-
-cat $f.new | grep storedir
-
-cp $f.new $f
-
-
-cat $f | grep storedir
-
-mkdir -p /tmp/catalyst/builds/default
-
-
-**** download stage3, snapshot
-
-
-p1="http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64/hardened/"
-
-p2="http://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
-
-
-p3=$( wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' )
-
-p4=$( echo $p3 | awk 'BEGIN{FS="/"}{print $3}' )
-
-echo $p1$p4
-
-
-# wget $p1$p4 -P /tmp/catalyst/builds/default/
-
-mkdir -p /tmp/catalyst/builds/hardened/ 
-
-wget $p1$p4 -O /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
-
-
-mkdir -p /tmp/catalyst/snapshots
-
-wget -P /tmp/catalyst/snapshots http://distfiles.gentoo.org/snapshots/portage-latest.tar.bz2
-
-
-|          | default directory                                                 |
-|----------+-------------------------------------------------------------------|
-| stage3   | tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2 |
-|          |                                                                   |
-| snapshot | tmp/catalyst/snapshots/portage-latest.tar.bz2                     |
-|          |                                                                   |
-
-# #############
-
-
-http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64/hardened/
-
-
-http://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt
-
-
-
-
-p1="http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64/hardened/"
-
-p2="http://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
-
-
-wget -O - -o /dev/null $p2 
-
-
-wget -O - -o /dev/null $p2 | awk '/stage/{print $1}'
-
-
-p3=$( wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' )
-
-
-
-wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' | awk 'BEGIN{FS="/"}{print $3}'
-
-
-echo $p3 | awk 'BEGIN{FS="/"}{print $3}'
-
-
-p4=$( echo $p3 | awk 'BEGIN{FS="/"}{print $3}' )
-
-p3=( wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' | awk 'BEGIN{FS="/"}{print $3}' )
-
-
-echo $p1$p4
-
-
-
-**** Specs
-
-s1="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage1.spec"
-
-s2="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage2.spec"
-
-s3="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage3.spec"
-
-wget -P /tmp/catalyst/builds/default/ $s1
-
-wget -P /tmp/catalyst/builds/default/ $s2
-
-wget -P /tmp/catalyst/builds/default/ $s3
-
-cd /tmp/catalyst/builds/default/
-
-ls
-
-
-
-# catalyst -f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
-
-# catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
-
-
-sed -i 's/^portage_confdir/# portage_confdir/' stage1.spec
-
-sed -i 's/^portage_confdir/# portage_confdir/' stage2.spec
-sed -i 's/^portage_confdir/# portage_confdir/' stage3.spec
-
-cat stage1.spec
-
-
-
-https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage4-minimal.spec
-
-
-
-**** debuging [2017-08-07 Mon 09:05]
-
-
-catalyst -f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
-
-catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
-
-
-       --config|-c FILE
-           Tell catalyst to use a user-defined configuration file. A sample configuration file is installed at /etc/catalyst/catalyst.conf.
-
-
-echo $f2
-
-catalyst -c $f2 \
--f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
-
-Source path set to /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
-Caching snapshot to /tmp/catalyst/latest/
-The autoresume path is /tmp/catalyst/tmp/hardened/.autoresume-stage1-amd64-hardened-latest/
-stage1 stage path is /tmp/catalyst/tmp/hardened/stage1-amd64-hardened-latest/tmp/stage1root
-
-!!! catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
-
-mount: permission denied
-
-!!! catalyst: Couldn't bind mount /proc
-
-docker run --cap-add SYS_ADMIN
-
-https://github.com/moby/moby/issues/9950
-
-
-
-*** gentoo/stage3-amd64-hardened  emerge dev-util/catalyst
-
-
-dt="/tmp/dockertest"
-
-mkdir $dt
-
-
-docker create -v /usr/portage --name myportage gentoo/portage
-
-
-docker run --volumes-from myportage \
--v $dt:/tmp \
---name gentoo -it gentoo/stage3-amd64-hardened /bin/bash
-
-# emerge --ask dev-util/catalyst
-
-emerge dev-util/catalyst
-
-
-|                     |
-| working lists       |
-|                     |
-| projects path       |
-|                     |
-| docker              |
-|                     |
-| steps emerge kernel |
-|                     |
-| 10 dply             |
-|                     |
-| 22                  |
-
-
-*** reference
-
-
-https://wiki.gentoo.org/wiki/Catalyst
-
-emerge --ask dev-util/catalyst
-
-/etc/catalyst/catalyst.conf
-
-** docker
-
-*** collect cpu information of automated build 
-
-docker run -it busybox
-
-cat /proc/cpuinfo
-
-f="/root/cpuinof"
-
-cat /proc/cpuinfo >> $f
-
-cat $f
-
-docker run -it c5766/cciab
-
-
-
-https://docs.docker.com/docker-hub/builds/#prerequisites
-
-
-| create a respsitory in github              |
-|                                            |
-| docker hub login                           |
-|                                            |
-| profile > setting > create automated build |
-
-
-
-*** pallavagarwal07/gentoo-stabilization
-
-https://hub.docker.com/r/pallavagarwal07/gentoo-stabilization/~/dockerfile/
-
-FROM gentoo/stage3-amd64
-RUN mkdir -p /root/build; \
-    mkdir /usr/portage; \
-    emerge-webrsync; \
-    eselect python set python2.7; \
-    echo 'MAKEOPTS="-j4"' >> /etc/portage/make.conf; \
-    emerge --autounmask-write dev-vcs/git \
-                              dev-python/numpy \
-                              dev-python/requests \
-                              app-portage/portage-utils; \
-    yes | etc-update --automode -3; \
-    emerge --autounmask-write dev-vcs/git \
-                              dev-python/numpy \
-                              dev-python/requests \
-                              app-portage/portage-utils; \
-    easy_install satispy; \
-    easy_install pycosat; \
-    cd /usr/portage; \
-    rm -rf `ls -1A | grep -vP '^profiles'`;
-COPY scripts/ControlContainer/*.py scripts/ControlContainer/*.sh /root/
-COPY etc_portage /etc/portage/
-CMD ["/root/logger.sh"]
-
-
-
-*** basic Docker commands
-
-
-
-docker build -t friendlyname .  # Create image using this directory's Dockerfile
-docker run -p 4000:80 friendlyname  # Run "friendlyname" mapping port 4000 to 80
-docker run -d -p 4000:80 friendlyname         # Same thing, but in detached mode
-docker ps                                 # See a list of all running containers
-docker stop <hash>                     # Gracefully stop the specified container
-docker ps -a           # See a list of all containers, even the ones not running
-docker kill <hash>                   # Force shutdown of the specified container
-docker rm <hash>              # Remove the specified container from this machine
-docker rm $(docker ps -a -q)           # Remove all containers from this machine
-docker images -a                               # Show all images on this machine
-docker rmi <imagename>            # Remove the specified image from this machine
-docker rmi $(docker images -q)             # Remove all images from this machine
-docker login             # Log in this CLI session using your Docker credentials
-docker tag <image> username/repository:tag  # Tag <image> for upload to registry
-docker push username/repository:tag            # Upload tagged image to registry
-docker run username/repository:tag                   # Run image from a registry
-
-https://docs.docker.com/get-started/part2/#recap-and-cheat-sheet-optional
-
-
-*** Dockerfile
-
-| build                                           |
-|                                                 |
-| create an empty directory                       |
-|                                                 |
-| cd inside it                                    |
-|                                                 |
-| create a file called Dockerfile                 |
-|                                                 |
-| run the build command                           |
-| docker build -t friendlyhello .                 |
-|                                                 |
-|-------------------------------------------------|
-| run                                             |
-|                                                 |
-| docker run -p 4000:80 friendlyhello             |
-|                                                 |
-| exit docker                                     |
-| CTRL+C to quit                                  |
-|                                                 |
-| docker stop 1fa4ab2cf395                        |
-|-------------------------------------------------|
-| upload                                          |
-|                                                 |
-| docker login                                    |
-|                                                 |
-| Tag the image                                   |
-| docker tag image username/repository:tag        |
-| docker tag friendlyhello john/get-started:part1 |
-|                                                 |
-| Upload                                          |
-| docker push username/repository:tag             |
-|-------------------------------------------------|
-| pull and run                                    |
-|                                                 |
-| docker run -p 4000:80 john/get-started:part1    |
-|                                                 |
-|                                                 |
-
-
-  https://docs.docker.com/get-started/part2/#define-a-container-with-a-dockerfile
-
-# Use an official Python runtime as a parent image
-FROM python:2.7-slim
-
-# Set the working directory to /app
-WORKDIR /app
-
-# Copy the current directory contents into the container at /app
-ADD . /app
-
-# Install any needed packages specified in requirements.txt
-RUN pip install -r requirements.txt
-
-# Make port 80 available to the world outside this container
-EXPOSE 80
-
-# Define environment variable
-ENV NAME World
-
-# Run app.py when the container launches
-CMD ["python", "app.py"]
-
-Create two more files, requirements.txt and app.py, and put them in the same folder with the Dockerfile. 
-
 
 
 ** kernel and package build
+
+*** build in dply [2017-08-18 Fri 11:04]
+
+
 
 *** chrome [2017-07-29 Sat 17:42]
 
@@ -2013,6 +1128,895 @@ dispatch-conf
 
 proxychains -f /root/proxychains.conf \
 emerge  dev-libs/weston
+
+** git@github.com:cmchaol/giid.git
+
+#+HEADERS: :dir /tmp
+#+BEGIN_SRC sh
+
+git clone git@github.com:cmchaol/giid.git
+cd giid
+git config user.email "cmchaol@users.noreply.github.com"
+git config user.name "cmchaol"
+
+#+END_SRC
+
+#+RESULTS:
+
+ https://github.com/cmchaol/giid
+
+…or create a new repository on the command line
+￼
+echo "# giid" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git remote add origin git@github.com:cmchaol/giid.git
+git push -u origin master
+…or push an existing repository from the command line
+￼
+git remote add origin git@github.com:cmchaol/giid.git
+git push -u origin master
+…or import code from another repository
+You can initialize this repository with code from a Subversion, Mercurial, or TFS project.
+ 
+      
+
+
+
+** Catalyst
+
+*** respsitory
+
+|   | docker hub            | github |
+|---+-----------------------+--------|
+|   | c5766/gentoo-catalyst |        |
+|   |                       |        |
+|   |                       | ms4    |
+|   |                       |        |
+
+
+****  git@github.com:cmchaol/ms4.git
+
+
+#+HEADERS: :dir /tmp
+#+BEGIN_SRC sh
+
+git clone git@github.com:cmchaol/ms4.git
+cd ms4
+git config user.email "cmchaol@users.noreply.github.com"
+git config user.name "cmchaol"
+
+#+END_SRC
+
+#+RESULTS:
+
+
+
+*** a docker for gentoo catalyst
+
+docker attach 
+
+| dply      |
+|           |
+| autobuild |
+|           |
+
+**** docker run from v2
+
+docker run --name catalyst -it c5766/docker-gentoo-catalyst:v2 /bin/bash 
+
+docker run --cap-add SYS_ADMIN --name catalyst -it c5766/docker-gentoo-catalyst:v2 /bin/bash 
+
+
+**** Dockerfiles v3
+
+| place the cursor inside source blocks |
+|                                       |
+| C-u C-c C-v t                         |
+|                                       |
+| git push                              |
+|                                       |
+| test with wget                        |
+
+
+#+HEADER:  :tangle Dockerfiles/v2
+#+BEGIN_SRC sh
+FROM gentoo/stage3-amd64-hardened
+
+RUN emerge-webrsync; \
+    emerge dev-util/catalyst
+#+END_SRC
+
+f="https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/v2"
+
+wget -O - -o /dev/null $f
+
+
+
+d="/tmp/v2"
+
+mkdir $d
+
+wget -O $d/Dockerfile $f
+
+cd $d
+
+docker build -t docker-gentoo-catalyst-v2 .
+
+docker login
+
+docker tag docker-gentoo-catalyst-v2 c5766/docker-gentoo-catalyst:v3
+
+docker push c5766/docker-gentoo-catalyst:v3
+
+
+
+**** Dockerfiles v2
+
+| place the cursor inside source blocks |
+|                                       |
+| C-u C-c C-v t                         |
+|                                       |
+| git push                              |
+|                                       |
+| test with wget                        |
+
+
+#+HEADER:  :tangle Dockerfiles/v2
+#+BEGIN_SRC sh
+FROM gentoo/stage3-amd64-hardened
+
+RUN emerge-webrsync; \
+    emerge dev-util/catalyst
+#+END_SRC
+
+f="https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/v2"
+
+wget -O - -o /dev/null $f
+
+
+
+d="/tmp/v2"
+
+mkdir $d
+
+wget -O $d/Dockerfile $f
+
+cd $d
+
+docker build -t docker-gentoo-catalyst-v2 .
+
+docker login
+
+docker tag docker-gentoo-catalyst-v2 c5766/docker-gentoo-catalyst:v2
+
+docker push c5766/docker-gentoo-catalyst:v2
+
+
+**** Dockerfiles v1
+
+| place the cursor inside source blocks |
+|                                       |
+| C-u C-c C-v t                         |
+|                                       |
+| git push                              |
+|                                       |
+| test with wget                        |
+
+
+#+HEADER:  :tangle Dockerfiles/v1
+#+BEGIN_SRC sh
+
+This is a test. v1.
+
+#+END_SRC
+
+f="https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/v1"
+
+wget -O - -o /dev/null $f
+
+
+
+
+**** publishing to folder Dockerfiles
+
+| place the cursor inside source blocks |
+|                                       |
+| C-u C-c C-v t                         |
+
+
+#+HEADER:  :tangle Dockerfiles/test
+#+BEGIN_SRC sh
+
+This is a test.
+
+#+END_SRC
+
+https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/test
+
+
+f="https://raw.githubusercontent.com/cmchaol/gimw/master/Dockerfiles/test"
+
+wget -O - -o /dev/null $f
+
+
+
+*** exercise [2017-08-09 Wed 07:32]
+     
+
+docker run --cap-add SYS_ADMIN -it c5766/gentoo-catalyst:v.2 /bin/bash 
+
+
+**** adjust storedir to /root
+
+| default configuration file | /etc/catalyst/catalyst.conf | $f1 |
+|----------------------------+-----------------------------+-----|
+| new                        | cp $f1 /root                |     |
+|                            | /root/catalyst.conf         | $f2 |
+
+
+f1="/etc/catalyst/catalyst.conf"
+
+echo $f1
+
+cp $f1 /root
+
+f2="/root/catalyst.conf"
+
+cat $f2 | grep storedir
+
+|           | storedir          |
+|-----------+-------------------|
+| default   | /var/tmp/catalyst |
+|           |                   |
+| change to | /root/catalyst    |
+
+
+sed -i 's%^storedir="/var/tmp/catalyst"%storedir="/root/catalyst"%' $f2
+
+cat $f2 | grep storedir
+
+
+**** download stage3, snapshot
+
+
+p1="http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64/hardened/"
+
+p2="http://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
+
+
+p3=$( wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' )
+
+p4=$( echo $p3 | awk 'BEGIN{FS="/"}{print $3}' )
+
+echo $p1$p4
+
+
+# wget $p1$p4 -P /tmp/catalyst/builds/default/
+
+mkdir -p /root/catalyst/builds/hardened/ 
+
+wget $p1$p4 -O /root/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+
+
+mkdir -p /root/catalyst/snapshots
+
+wget -P /root/catalyst/snapshots http://distfiles.gentoo.org/snapshots/portage-latest.tar.bz2
+
+
+| stage3   | root/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2 |
+|          |                                                                    |
+| snapshot | root/catalyst/snapshots/portage-latest.tar.bz2                     |
+
+
+**** Specs
+
+s1="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage1.spec"
+s2="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage2.spec"
+s3="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage3.spec"
+wget -P /root/catalyst/builds/default/ $s1
+wget -P /root/catalyst/builds/default/ $s2
+wget -P /root/catalyst/builds/default/ $s3
+cd /root/catalyst/builds/default/
+ls
+
+sed -i 's/^portage_confdir/# portage_confdir/' stage1.spec
+sed -i 's/^portage_confdir/# portage_confdir/' stage2.spec
+sed -i 's/^portage_confdir/# portage_confdir/' stage3.spec
+
+cat stage1.spec
+
+
+
+https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage4-minimal.spec
+
+
+
+**** debuging [2017-08-07 Mon 09:05]
+
+# echo $f2
+
+catalyst -c $f2 \
+-f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
+
+
+# ###################
+
+tar: SELinux support is not available
+tar: setxattrat: Cannot set 'user.pax.flags' extended attribute for file './usr/bin/python3.4m': Operation not supported
+tar: setxattrat: Cannot set 'user.pax.flags' extended attribute for file './usr/bin/python2.7': Operation not supported
+
+
+Source path set to /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+Caching snapshot to /tmp/catalyst/latest/
+The autoresume path is /tmp/catalyst/tmp/hardened/.autoresume-stage1-amd64-hardened-latest/
+stage1 stage path is /tmp/catalyst/tmp/hardened/stage1-amd64-hardened-latest/tmp/stage1root
+
+!!! catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+
+mount: permission denied
+
+!!! catalyst: Couldn't bind mount /proc
+
+docker run --cap-add SYS_ADMIN
+
+https://github.com/moby/moby/issues/9950
+
+
+catalyst -f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
+
+catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+
+
+       --config|-c FILE
+           Tell catalyst to use a user-defined configuration file. A sample configuration file is installed at /etc/catalyst/catalyst.conf.
+
+
+
+
+*** exercise [2017-08-07 Mon 10:39]
+     
+
+**** adjust storedir to /root
+
+| default configuration file | /etc/catalyst/catalyst.conf | $f1 |
+|----------------------------+-----------------------------+-----|
+| new                        | cp $f1 /root                |     |
+|                            | /root/catalyst.conf         | $f2 |
+
+
+f1="/etc/catalyst/catalyst.conf"
+
+echo $f1
+
+cp $f1 /root
+
+f2="/root/catalyst.conf"
+
+cat $f2 | grep storedir
+
+|           | storedir          |
+|-----------+-------------------|
+| default   | /var/tmp/catalyst |
+|           |                   |
+| change to | /root/catalyst    |
+
+
+sed -i 's%^storedir="/var/tmp/catalyst"%storedir="/root/catalyst"%' $f2
+
+cat $f2 | grep storedir
+
+
+**** download stage3, snapshot
+
+
+p1="http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64/hardened/"
+
+p2="http://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
+
+
+p3=$( wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' )
+
+p4=$( echo $p3 | awk 'BEGIN{FS="/"}{print $3}' )
+
+echo $p1$p4
+
+
+# wget $p1$p4 -P /tmp/catalyst/builds/default/
+
+mkdir -p /root/catalyst/builds/hardened/ 
+
+wget $p1$p4 -O /root/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+
+
+mkdir -p /root/catalyst/snapshots
+
+wget -P /root/catalyst/snapshots http://distfiles.gentoo.org/snapshots/portage-latest.tar.bz2
+
+
+| stage3   | root/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2 |
+|          |                                                                    |
+| snapshot | root/catalyst/snapshots/portage-latest.tar.bz2                     |
+
+
+**** Specs
+
+s1="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage1.spec"
+s2="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage2.spec"
+s3="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage3.spec"
+wget -P /root/catalyst/builds/default/ $s1
+wget -P /root/catalyst/builds/default/ $s2
+wget -P /root/catalyst/builds/default/ $s3
+cd /root/catalyst/builds/default/
+ls
+
+sed -i 's/^portage_confdir/# portage_confdir/' stage1.spec
+sed -i 's/^portage_confdir/# portage_confdir/' stage2.spec
+sed -i 's/^portage_confdir/# portage_confdir/' stage3.spec
+
+cat stage1.spec
+
+
+
+https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage4-minimal.spec
+
+
+
+**** debuging [2017-08-07 Mon 09:05]
+
+# echo $f2
+
+catalyst -c $f2 \
+-f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
+
+
+# ###################
+
+tar: SELinux support is not available
+tar: setxattrat: Cannot set 'user.pax.flags' extended attribute for file './usr/bin/python3.4m': Operation not supported
+tar: setxattrat: Cannot set 'user.pax.flags' extended attribute for file './usr/bin/python2.7': Operation not supported
+
+
+Source path set to /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+Caching snapshot to /tmp/catalyst/latest/
+The autoresume path is /tmp/catalyst/tmp/hardened/.autoresume-stage1-amd64-hardened-latest/
+stage1 stage path is /tmp/catalyst/tmp/hardened/stage1-amd64-hardened-latest/tmp/stage1root
+
+!!! catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+
+mount: permission denied
+
+!!! catalyst: Couldn't bind mount /proc
+
+docker run --cap-add SYS_ADMIN
+
+https://github.com/moby/moby/issues/9950
+
+
+catalyst -f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
+
+catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+
+
+       --config|-c FILE
+           Tell catalyst to use a user-defined configuration file. A sample configuration file is installed at /etc/catalyst/catalyst.conf.
+
+
+
+*** exercise 
+     
+
+**** adjust storedir to /tmp
+
+| default configuration file | /etc/catalyst/catalyst.conf | $f1 |
+|----------------------------+-----------------------------+-----|
+| new                        | cp $f1 /tmp                 |     |
+|                            | /tmp/catalyst.conf          | $f2 |
+
+
+f1="/etc/catalyst/catalyst.conf"
+
+echo $f1
+
+cp $f1 /tmp
+
+f2="/tmp/catalyst.conf"
+
+# cat $f2 | egrep 'storedir|snapshot_cache'
+
+cat $f2 | grep storedir
+
+cat $f2 | grep snapshot_cache
+
+|                  | default                          | change to     |
+|------------------+----------------------------------+---------------|
+| storedir         | /var/tmp/catalyst                | /tmp/catalyst |
+|                  |                                  |               |
+| # snapshot_cache | /var/tmp/catalyst/snapshot_cache | /tmp/catalyst |
+|                  |                                  |               |
+
+
+sed -i 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f2
+
+# sed -i 's%^snapshot_cache="/var/tmp/catalyst/snapshot_cache"%snapshot_cache="/tmp/catalyst"%' $f2
+
+cat $f2 | grep storedir
+
+# cat $f2 | grep snapshot_cache
+
+# ###################
+
+cat /etc/catalyst/catalyst.conf
+
+
+# storedir specifies where catalyst will store everything that it builds, and
+# also where it will put its temporary files and caches.
+storedir="/var/tmp/catalyst"
+
+
+f="/etc/catalyst/catalyst.conf"
+
+echo $f
+
+cat $f | grep storedir
+
+cp $f /tmp
+
+sed 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f > $f.new
+
+# sed 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f > /etc/catalyst/catalyst.conf
+
+# sed 's%^storedir="/var/tmp/catalyst"%storedir="/tmp/catalyst"%' $f | grep storedir
+
+
+cat $f.new | grep storedir
+
+cp $f.new $f
+
+
+cat $f | grep storedir
+
+mkdir -p /tmp/catalyst/builds/default
+
+
+**** download stage3, snapshot
+
+
+p1="http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64/hardened/"
+
+p2="http://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
+
+
+p3=$( wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' )
+
+p4=$( echo $p3 | awk 'BEGIN{FS="/"}{print $3}' )
+
+echo $p1$p4
+
+
+# wget $p1$p4 -P /tmp/catalyst/builds/default/
+
+mkdir -p /tmp/catalyst/builds/hardened/ 
+
+wget $p1$p4 -O /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+
+
+mkdir -p /tmp/catalyst/snapshots
+
+wget -P /tmp/catalyst/snapshots http://distfiles.gentoo.org/snapshots/portage-latest.tar.bz2
+
+
+|          | default directory                                                 |
+|----------+-------------------------------------------------------------------|
+| stage3   | tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2 |
+|          |                                                                   |
+| snapshot | tmp/catalyst/snapshots/portage-latest.tar.bz2                     |
+|          |                                                                   |
+
+# #############
+
+
+http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64/hardened/
+
+
+http://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt
+
+
+
+
+p1="http://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64/hardened/"
+
+p2="http://distfiles.gentoo.org/releases/amd64/autobuilds/latest-stage3-amd64-hardened.txt"
+
+
+wget -O - -o /dev/null $p2 
+
+
+wget -O - -o /dev/null $p2 | awk '/stage/{print $1}'
+
+
+p3=$( wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' )
+
+
+
+wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' | awk 'BEGIN{FS="/"}{print $3}'
+
+
+echo $p3 | awk 'BEGIN{FS="/"}{print $3}'
+
+
+p4=$( echo $p3 | awk 'BEGIN{FS="/"}{print $3}' )
+
+p3=( wget -O - -o /dev/null $p2 | awk '/stage/{print $1}' | awk 'BEGIN{FS="/"}{print $3}' )
+
+
+echo $p1$p4
+
+
+
+**** Specs
+
+s1="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage1.spec"
+
+s2="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage2.spec"
+
+s3="https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage3.spec"
+
+wget -P /tmp/catalyst/builds/default/ $s1
+
+wget -P /tmp/catalyst/builds/default/ $s2
+
+wget -P /tmp/catalyst/builds/default/ $s3
+
+cd /tmp/catalyst/builds/default/
+
+ls
+
+
+
+# catalyst -f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
+
+# catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+
+
+sed -i 's/^portage_confdir/# portage_confdir/' stage1.spec
+
+sed -i 's/^portage_confdir/# portage_confdir/' stage2.spec
+sed -i 's/^portage_confdir/# portage_confdir/' stage3.spec
+
+cat stage1.spec
+
+
+
+https://gitweb.gentoo.org/proj/releng.git/plain/releases/weekly/specs/amd64/hardened/stage4-minimal.spec
+
+
+
+**** debuging [2017-08-07 Mon 09:05]
+
+
+catalyst -f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
+
+catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+
+
+       --config|-c FILE
+           Tell catalyst to use a user-defined configuration file. A sample configuration file is installed at /etc/catalyst/catalyst.conf.
+
+
+echo $f2
+
+catalyst -c $f2 \
+-f stage1.spec && catalyst -f stage2.spec && catalyst -f stage3.spec
+
+Source path set to /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+Caching snapshot to /tmp/catalyst/latest/
+The autoresume path is /tmp/catalyst/tmp/hardened/.autoresume-stage1-amd64-hardened-latest/
+stage1 stage path is /tmp/catalyst/tmp/hardened/stage1-amd64-hardened-latest/tmp/stage1root
+
+!!! catalyst: Cannot locate specified source_path: /tmp/catalyst/builds/hardened/stage3-amd64-hardened-latest.tar.bz2
+
+mount: permission denied
+
+!!! catalyst: Couldn't bind mount /proc
+
+docker run --cap-add SYS_ADMIN
+
+https://github.com/moby/moby/issues/9950
+
+
+
+*** gentoo/stage3-amd64-hardened  emerge dev-util/catalyst
+
+
+dt="/tmp/dockertest"
+
+mkdir $dt
+
+
+docker create -v /usr/portage --name myportage gentoo/portage
+
+
+docker run --volumes-from myportage \
+-v $dt:/tmp \
+--name gentoo -it gentoo/stage3-amd64-hardened /bin/bash
+
+# emerge --ask dev-util/catalyst
+
+emerge dev-util/catalyst
+
+
+|                     |
+| working lists       |
+|                     |
+| projects path       |
+|                     |
+| docker              |
+|                     |
+| steps emerge kernel |
+|                     |
+| 10 dply             |
+|                     |
+| 22                  |
+
+
+*** reference
+
+
+https://wiki.gentoo.org/wiki/Catalyst
+
+emerge --ask dev-util/catalyst
+
+/etc/catalyst/catalyst.conf
+
+** docker
+
+*** collect cpu information of automated build 
+
+docker run -it busybox
+
+cat /proc/cpuinfo
+
+f="/root/cpuinof"
+
+cat /proc/cpuinfo >> $f
+
+cat $f
+
+docker run -it c5766/cciab
+
+
+
+https://docs.docker.com/docker-hub/builds/#prerequisites
+
+
+| create a respsitory in github              |
+|                                            |
+| docker hub login                           |
+|                                            |
+| profile > setting > create automated build |
+
+
+
+*** pallavagarwal07/gentoo-stabilization
+
+https://hub.docker.com/r/pallavagarwal07/gentoo-stabilization/~/dockerfile/
+
+FROM gentoo/stage3-amd64
+RUN mkdir -p /root/build; \
+    mkdir /usr/portage; \
+    emerge-webrsync; \
+    eselect python set python2.7; \
+    echo 'MAKEOPTS="-j4"' >> /etc/portage/make.conf; \
+    emerge --autounmask-write dev-vcs/git \
+                              dev-python/numpy \
+                              dev-python/requests \
+                              app-portage/portage-utils; \
+    yes | etc-update --automode -3; \
+    emerge --autounmask-write dev-vcs/git \
+                              dev-python/numpy \
+                              dev-python/requests \
+                              app-portage/portage-utils; \
+    easy_install satispy; \
+    easy_install pycosat; \
+    cd /usr/portage; \
+    rm -rf `ls -1A | grep -vP '^profiles'`;
+COPY scripts/ControlContainer/*.py scripts/ControlContainer/*.sh /root/
+COPY etc_portage /etc/portage/
+CMD ["/root/logger.sh"]
+
+
+
+*** basic Docker commands
+
+
+
+docker build -t friendlyname .  # Create image using this directory's Dockerfile
+docker run -p 4000:80 friendlyname  # Run "friendlyname" mapping port 4000 to 80
+docker run -d -p 4000:80 friendlyname         # Same thing, but in detached mode
+docker ps                                 # See a list of all running containers
+docker stop <hash>                     # Gracefully stop the specified container
+docker ps -a           # See a list of all containers, even the ones not running
+docker kill <hash>                   # Force shutdown of the specified container
+docker rm <hash>              # Remove the specified container from this machine
+docker rm $(docker ps -a -q)           # Remove all containers from this machine
+docker images -a                               # Show all images on this machine
+docker rmi <imagename>            # Remove the specified image from this machine
+docker rmi $(docker images -q)             # Remove all images from this machine
+docker login             # Log in this CLI session using your Docker credentials
+docker tag <image> username/repository:tag  # Tag <image> for upload to registry
+docker push username/repository:tag            # Upload tagged image to registry
+docker run username/repository:tag                   # Run image from a registry
+
+https://docs.docker.com/get-started/part2/#recap-and-cheat-sheet-optional
+
+
+*** Dockerfile
+
+| build                                           |
+|                                                 |
+| create an empty directory                       |
+|                                                 |
+| cd inside it                                    |
+|                                                 |
+| create a file called Dockerfile                 |
+|                                                 |
+| run the build command                           |
+| docker build -t friendlyhello .                 |
+|                                                 |
+|-------------------------------------------------|
+| run                                             |
+|                                                 |
+| docker run -p 4000:80 friendlyhello             |
+|                                                 |
+| exit docker                                     |
+| CTRL+C to quit                                  |
+|                                                 |
+| docker stop 1fa4ab2cf395                        |
+|-------------------------------------------------|
+| upload                                          |
+|                                                 |
+| docker login                                    |
+|                                                 |
+| Tag the image                                   |
+| docker tag image username/repository:tag        |
+| docker tag friendlyhello john/get-started:part1 |
+|                                                 |
+| Upload                                          |
+| docker push username/repository:tag             |
+|-------------------------------------------------|
+| pull and run                                    |
+|                                                 |
+| docker run -p 4000:80 john/get-started:part1    |
+|                                                 |
+|                                                 |
+
+
+  https://docs.docker.com/get-started/part2/#define-a-container-with-a-dockerfile
+
+# Use an official Python runtime as a parent image
+FROM python:2.7-slim
+
+# Set the working directory to /app
+WORKDIR /app
+
+# Copy the current directory contents into the container at /app
+ADD . /app
+
+# Install any needed packages specified in requirements.txt
+RUN pip install -r requirements.txt
+
+# Make port 80 available to the world outside this container
+EXPOSE 80
+
+# Define environment variable
+ENV NAME World
+
+# Run app.py when the container launches
+CMD ["python", "app.py"]
+
+Create two more files, requirements.txt and app.py, and put them in the same folder with the Dockerfile. 
 
 
 ** savedefconfig alldefconfig

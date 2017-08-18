@@ -6520,6 +6520,26 @@ fi
 
 blkid | grep sdd
 
+
+[2017-08-18 Fri 15:59]
+
+/dev/sdd2: UUID="aabd4c5d-ef46-4855-b103-326305fb2d4e" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="7b1e0c1e-f717-4235-ba0a-d879269d3ba9" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=7b1e0c1e-f717-4235-ba0a-d879269d3ba9   /            ext4    noatime              0 1
+UUID=aabd4c5d-ef46-4855-b103-326305fb2d4e   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
 [2017-07-28 Fri 13:59]
 
 /dev/sdd2: UUID="b6dc3206-3855-4783-9f35-b49de028fc02" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
@@ -6810,6 +6830,14 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+[2017-08-18 Fri 15:49]  stage4_20170818.tar.xz
+
+real    3m57.401s
+user    0m32.251s
+sys     0m11.775s
+
+
 
 [2017-07-28 Fri 12:41] stage4_pro_k448_wes_gru_chr_ema_git_20170728.tar.xz
 

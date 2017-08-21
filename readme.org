@@ -1,12 +1,12 @@
 * scenarios
 
+** inside a docker client
+
+
+
 
 
 ** kernel and package build
-
-*** build in dply [2017-08-18 Fri 11:04]
-
-
 
 *** chrome [2017-07-29 Sat 17:42]
 
@@ -1128,6 +1128,7 @@ dispatch-conf
 
 proxychains -f /root/proxychains.conf \
 emerge  dev-libs/weston
+
 
 ** git@github.com:cmchaol/giid.git
 

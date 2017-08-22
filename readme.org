@@ -1,12 +1,128 @@
 * scenarios
 
-** inside a docker client
-
-
-
-
 
 ** kernel and package build
+
+*** c5766/giid:v38
+
+
+
+| kernel configuration            |                                                     |
+|                                 | [2017-08-22 Tue 10:26]                              |
+| sys-kernel/hardened-sources     | 4.7.10                                              |
+|---------------------------------+-----------------------------------------------------|
+| Smallest Kernel                 | ker4710-smallest-20170822                           |
+|                                 |                                                     |
+| cpu tmpfs futex                 | v                                                   |
+| eventpoll MULTIUSER             |                                                     |
+|                                 |                                                     |
+| usb disk fs                     | v                                                   |
+|                                 |                                                     |
+| netcards                        | v                                                   |
+|---------------------------------+-----------------------------------------------------|
+| udev                            | ker4710-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-20170822      |
+|                                 |                                                     |
+| USE="udev"                      |                                                     |
+|                                 |                                                     |
+| emerge                          |                                                     |
+|                                 |                                                     |
+| rc-update add udev sysinit      |                                                     |
+|                                 |                                                     |
+|---------------------------------+-----------------------------------------------------|
+| xorg driver                     |                                                     |
+|                                 |                                                     |
+| add Event interface             |                                                     |
+|                                 |                                                     |
+|                                 |                                                     |
+| <*> Framebuffer Console support | ker4710-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-20170822    |
+|                                 |                                                     |
+| INPUT_DEVICES="libinput"        |                                                     |
+|                                 |                                                     |
+| emerge weston                   |                                                     |
+|                                 |                                                     |
+|---------------------------------+-----------------------------------------------------|
+| emerge grub                     |                                                     |
+|                                 |                                                     |
+|---------------------------------+-----------------------------------------------------|
+|                                 |                                                     |
+| emerge autossh keychain         |                                                     |
+|                                 |                                                     |
+| dhcpcd                          |                                                     |
+|                                 |                                                     |
+| chrome                          |                                                     |
+| browser                         |                                                     |
+|                                 |                                                     |
+| General setup                   |                                                     |
+| Namespaces support              |                                                     |
+| User namespace                  | ker4710-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-20170822 |
+|                                 |                                                     |
+| emerge google-chrome            |                                                     |
+|                                 |                                                     |
+| emerge emacs                    |                                                     |
+|                                 |                                                     |
+
+
+
+cd /usr/src/linux
+
+
+make allnoconfig  
+
+
+make menuconfig
+
+
+
+f="/tmp/ker4710-smallest-20170822"
+
+f="/tmp/ker4710-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-20170822"
+
+f="/tmp/ker4710-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-20170822"
+
+f="/tmp/ker4710-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-20170822"
+
+cp .config $f.config
+
+
+make savedefconfig 
+
+cp defconfig $f.defconfig
+
+ls -l /tmp
+
+
+
+cp $f .config 
+
+make KCONFIG_ALLCONFIG=$f alldefconfig
+
+
+make menuconfig
+
+
+proxychains -f /root/proxychains.conf \
+emerge =sys-kernel/hardened-sources-4.4.8-r1
+
+# 
+tail -f /tmp/wd/var/log/emerge-fetch.log
+
+
+
+proxychains -f /root/proxychains.conf \
+emerge -pv google-chrome 
+
+
+
+proxychains -f /root/proxychains.conf \
+emerge -pv dev-vcs/git
+
+https://wayland.freedesktop.org/xserver.html
+
+
+
+
+
+
 
 *** chrome [2017-07-29 Sat 17:42]
 

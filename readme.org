@@ -90,6 +90,8 @@ cp defconfig $f.defconfig
 
 ls -l /tmp
 
+make  && make modules_install
+
 
 
 cp $f .config 
@@ -6639,6 +6641,25 @@ fi
 blkid | grep sdd
 
 
+[2017-08-22 Tue 16:40]
+
+/dev/sdd2: UUID="0dd60430-7730-4a73-b3dd-8302cff58e4f" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="ffe43167-f83e-48e2-ab8c-c282d50ab9ab" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=ffe43167-f83e-48e2-ab8c-c282d50ab9ab   /            ext4    noatime              0 1
+UUID=0dd60430-7730-4a73-b3dd-8302cff58e4f   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
 [2017-08-21 Mon 11:00]
 
 /dev/sdd2: UUID="a919bfd2-86f1-4525-a2a5-0c5e5d772f53" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
@@ -6908,11 +6929,26 @@ lsblk
 
 *** 80
 
-qemu-system-x86_64 -m 1G -drive file=/dev/sdd
+Control A
+C
+quit
+
+
+qemu-system-x86_64 -m 1G -drive file=/dev/sdd 
+
+
+
+qemu-system-x86_64 \
+    -kernel /tmp/gentoo/usr/src/linux/arch/x86_64/boot/bzImage \
+    -nographic -append "console=ttyS0" -enable-kvm -hdb /dev/sdd root=/dev/sdd4 ro
 
 
 
 qemu-system-x86_64 -m 1G -drive file=/dev/sdb
+
+qemu-kvm -hdb <device>
+
+
 
 
 *** 50
@@ -6930,6 +6966,20 @@ cat /etc/default/grub | grep GRUB_CMDLINE_LINUX_DEFAULT
 # update grub.cfg
 /usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
 
+
+
+KERNELVER=4.8.17-hardened-r2-x11
+
+KERNELVER=4.7.10-hardened
+
+EXTENSION=20170822
+
+cp .config /boot/config-${KERNELVER}-${EXTENSION}
+cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
+cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
+cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
+
+/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
 
 
 
@@ -6969,6 +7019,16 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+[2017-08-22 Tue 16:36]  stage4_20170822.tar.xz
+
+
+real    3m46.218s
+user    0m33.689s
+sys     0m10.666s
+
+
+
 
 [2017-08-21 Mon 10:54]  stage4_20170821.tar.xz
 

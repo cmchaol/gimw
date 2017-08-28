@@ -6585,22 +6585,22 @@ Exit the VM by hitting Ctl-a c then typing “quit” at the qemu monitor shell.
 
 ** extract to usb and test
 
-|    |                   |
-| 10 | format usb        |
-|    |                   |
-| 16 | mount             |
-|    |                   |
-| 20 | extraction to usb |
-|    |                   |
-| 30 | fstab             |
-|    |                   |
-| 40 | chroot            |
-|    |                   |
-| 50 | grub              |
-|    |                   |
-| 70 | passwd, useradd   |
-|    |                   |
-| 80 | qemu              |
+|    |                             |
+| 10 | format usb                  |
+|    |                             |
+| 16 | mount                       |
+|    |                             |
+| 20 | extraction to usb           |
+|    |                             |
+| 30 | fstab                       |
+|    |                             |
+| 40 | chroot                      |
+|    |                             |
+| 50 | grub                        |
+|    |                             |
+| 70 | passwd, useradd, rc_sys, su |
+|    |                             |
+| 80 | qemu                        |
 
 
 
@@ -6626,6 +6626,18 @@ passwd
 useradd -m -G users,wheel,audio,usb,video
 
 
+sed -e 's/#rc_sys=""/rc_sys="docker"/g' -i /etc/rc.conf
+
+cat /etc/rc.conf | grep rc_sys
+
+
+sed -e 's/^rc_sys="docker"/rc_sys=""/g' -i /etc/rc.conf
+
+cat /etc/rc.conf | grep rc_sys
+
+chmod 4755 /bin/su
+
+
 # ######
 /home/larry/.bash_profile  # Set XDG_RUNTIME_DIR
 #!/bin/bash
@@ -6644,7 +6656,35 @@ fi
 
 # in host, not in chroot
 
-blkid | grep sdd
+# blkid | grep sdd
+
+# blkid | grep sdd[2|4]  # fails
+
+blkid | grep 'sdd[2|4]'
+
+
+[2017-08-28 Mon 15:56]
+
+
+u2=$( blkid | awk '/sdd2/{print $2}' ); echo $u2
+u4=$( blkid | awk '/sdd4/{print $2}' ); echo $u4
+
+
+
+cat <<EOF > $w/etc/fstab
+
+$u2   /            ext4    noatime              0 1
+$u2   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
+
 
 [2017-08-23 Wed 13:00]
 
@@ -6978,6 +7018,26 @@ qemu-kvm -hdb <device>
 
 grub-install /dev/sdd
 
+cd /usr/src/linux
+
+
+emerge -pv hardened-sources
+
+
+KERNELVER=4.8.17-hardened-r2-x11
+
+KERNELVER=4.7.10-hardened
+
+KERNELVER=4.4.8-r1-hardened
+
+
+EXTENSION=201708228
+
+cp .config /boot/config-${KERNELVER}-${EXTENSION}
+cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
+cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
+cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
+
 
 # add rootwait
 sed -i 's/#GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="rootwait"/' /etc/default/grub 
@@ -6989,23 +7049,6 @@ cat /etc/default/grub | grep GRUB_CMDLINE_LINUX_DEFAULT
 # update grub.cfg
 /usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
 
-
-
-KERNELVER=4.8.17-hardened-r2-x11
-
-KERNELVER=4.7.10-hardened
-
-KERNELVER=4.4.8-r1-hardened
-
-
-EXTENSION=20170823
-
-cp .config /boot/config-${KERNELVER}-${EXTENSION}
-cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
-cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
-cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
-
-/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
 
 
 
@@ -7051,6 +7094,18 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+
+
+[2017-08-28 Mon 12:54]  stage4_20170828.tar.xz
+
+
+real    9m15.152s
+user    0m42.210s
+sys     0m12.277s
+
+
+
 
 [2017-08-23 Wed 11:55]  stage4_20170823.tar.xz
 

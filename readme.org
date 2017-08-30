@@ -3,6 +3,199 @@
 
 ** kernel and package build
 
+
+*** c5766/giid:v76
+
+
+
+| kernel configuration            |                                                                |
+|                                 | [2017-08-22 Tue 10:26]                                         |
+| sys-kernel/hardened-sources     | 4.7.10                                                         |
+|---------------------------------+----------------------------------------------------------------|
+| Smallest Kernel                 | ker4710-smallest-20170822                                      |
+|                                 |                                                                |
+| cpu tmpfs futex                 | v                                                              |
+| eventpoll MULTIUSER             |                                                                |
+|                                 |                                                                |
+| usb disk fs                     | v                                                              |
+|                                 |                                                                |
+| netcards                        | v                                                              |
+|---------------------------------+----------------------------------------------------------------|
+| udev                            | ker4710-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-20170822                 |
+|                                 |                                                                |
+| USE="udev"                      |                                                                |
+|                                 |                                                                |
+| emerge                          |                                                                |
+|                                 |                                                                |
+| rc-update add udev sysinit      |                                                                |
+|                                 |                                                                |
+|---------------------------------+----------------------------------------------------------------|
+| xorg driver                     |                                                                |
+|                                 |                                                                |
+| add Event interface             |                                                                |
+|                                 |                                                                |
+|                                 |                                                                |
+| <*> Framebuffer Console support | ker4710-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-20170822               |
+|                                 |                                                                |
+| INPUT_DEVICES="libinput"        |                                                                |
+|                                 |                                                                |
+| emerge weston                   |                                                                |
+|                                 |                                                                |
+|---------------------------------+----------------------------------------------------------------|
+| emerge grub                     |                                                                |
+|                                 |                                                                |
+|---------------------------------+----------------------------------------------------------------|
+|                                 |                                                                |
+| emerge autossh keychain         |                                                                |
+|                                 |                                                                |
+| dhcpcd                          |                                                                |
+|                                 |                                                                |
+| chrome                          |                                                                |
+| browser                         |                                                                |
+|                                 |                                                                |
+| General setup                   |                                                                |
+| Namespaces support              |                                                                |
+| User namespace                  | ker4710-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-20170822            |
+|                                 |                                                                |
+| emerge google-chrome            |                                                                |
+|                                 |                                                                |
+| emerge emacs                    |                                                                |
+|---------------------------------+----------------------------------------------------------------|
+|                                 | [2017-08-28 Mon 17:37]                                         |
+| docker                          | ker448-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-do-20170828          |
+|---------------------------------+----------------------------------------------------------------|
+|                                 | [2017-08-29 Tue 12:11]                                         |
+| qemu                            | ker448-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-do-qe-20170829       |
+|---------------------------------+----------------------------------------------------------------|
+|                                 | [2017-08-29 Tue 14:45]                                         |
+| fs, btrfs, dos, ntfs            | ker448-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-do-qe-ms-20170829    |
+|---------------------------------+----------------------------------------------------------------|
+| chrome                          | [2017-08-30 Wed 14:54]                                         |
+|                                 | ker448-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-do-qe-ms-ch-20170830 |
+|---------------------------------+----------------------------------------------------------------|
+
+/var/log/portage/elog/summary.log
+
+  SECCOMP_FILTER is required for sandbox to work
+  CONFIG_ADVISE_SYSCALLS is required for the renderer (bug #552576)
+
+  │ Symbol: SECCOMP_FILTER [=n]      
+  │   Defined at arch/Kconfig:349    
+  │   Depends on: HAVE_ARCH_SECCOMP_FILTER [=y] && SECCOMP [=n] && NET [=y]
+ 
+ Symbol: ADVISE_SYSCALLS [=y]
+  │ Prompt: Enable madvise/fadvise syscalls 
+  │   Location: 
+  │     -> General setup
+
+
+d="/tmp/dockertest"
+
+mkdir $d
+
+
+docker run -v $d:/tmp -it  c5766/giid:v71
+
+
+
+
+cat /etc/portage/make.conf | grep PORTAGE_TMPDIR
+
+sed -i 's/^PORTAGE_TMPDIR/# PORTAGE_TMPDIR/g' /etc/portage/make.conf # for dply
+
+sed -i 's/# PORTAGE_TMPDIR/PORTAGE_TMPDIR/g' /etc/portage/make.conf # for dply
+
+cat /etc/portage/make.conf | grep PORTAGE_TMPDIR
+
+
+
+cd /usr/src/linux
+
+# f=https://raw.githubusercontent.com/cmchaol/gimw/master/my-kernel-defconfig/ker4710-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-20170822.defconfig
+
+f=https://raw.githubusercontent.com/cmchaol/gimw/master/my-kernel-defconfig/ker448-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-do-20170828.defconfig
+
+
+
+wget -O /tmp/defconfig $f
+
+
+make KCONFIG_ALLCONFIG=/tmp/defconfig alldefconfig
+
+make menuconfig
+
+make allnoconfig  
+
+
+f="/tmp/ker4710-smallest-20170822"
+
+f="/tmp/ker4710-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-20170822"
+
+f="/tmp/ker4710-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-20170822"
+
+f="/tmp/ker4710-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-20170822"
+
+f="/tmp/ker448-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-do-20170828"
+
+f="/tmp/ker448-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-do-qe-20170829"
+
+f="/tmp/ker448-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-do-qe-ms-20170829"
+
+f="/tmp/ker448-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-do-qe-ms-ch-20170830"
+
+cp .config $f.config
+
+
+make savedefconfig 
+
+cp defconfig $f.defconfig
+
+ls -l /tmp
+
+
+make  && make modules_install
+
+time nice -10 \
+make -j 6 && make modules_install
+
+
+
+cp $f .config 
+
+make KCONFIG_ALLCONFIG=$f alldefconfig
+
+
+make menuconfig
+
+
+proxychains -f /root/proxychains.conf \
+emerge =sys-kernel/hardened-sources-4.4.8-r1
+
+# 
+tail -f /tmp/wd/var/log/emerge-fetch.log
+
+
+
+proxychains -f /root/proxychains.conf \
+emerge -pv google-chrome 
+
+
+
+proxychains -f /root/proxychains.conf \
+emerge -pv dev-vcs/git
+
+https://wayland.freedesktop.org/xserver.html
+
+
+
+
+
+
+
+
+
+
+
 *** c5766/giid:v75
 
 
@@ -7493,7 +7686,7 @@ KERNELVER=4.8.17-hardened-r2-x11
 
 KERNELVER=4.7.10-hardened
 
-KERNELVER=4.4.8-r1-hardened
+KERNELVER=4.4.8-r1-hardened-chrome
 
 
 EXTENSION=201708230

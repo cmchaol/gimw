@@ -7091,7 +7091,7 @@ passwd
 useradd -m -G users,wheel,audio,usb,video
 
 
-sed -e 's/#rc_sys=""/rc_sys="docker"/g' -i /etc/rc.conf
+# sed -e 's/#rc_sys=""/rc_sys="docker"/g' -i /etc/rc.conf
 
 cat /etc/rc.conf | grep rc_sys
 
@@ -7496,7 +7496,7 @@ KERNELVER=4.7.10-hardened
 KERNELVER=4.4.8-r1-hardened
 
 
-EXTENSION=201708228
+EXTENSION=201708230
 
 cp .config /boot/config-${KERNELVER}-${EXTENSION}
 cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
@@ -7559,6 +7559,13 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+[2017-08-30 Wed 09:26]  stage4_v103_20170829.tar.xz
+
+real    17m38.701s
+user    1m0.871s
+sys     0m17.222s
+
 
 
 

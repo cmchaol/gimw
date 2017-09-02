@@ -1,5 +1,917 @@
 * scenarios
 
+
+
+** extract to usb and test
+
+|    |                             |
+| 10 | format usb                  |
+|    |                             |
+| 16 | mount                       |
+|    |                             |
+| 20 | extraction to usb           |
+|    |                             |
+| 30 | fstab                       |
+|    |                             |
+| 40 | chroot                      |
+|    |                             |
+| 50 | grub                        |
+|    |                             |
+| 70 | passwd, useradd, rc_sys, su |
+|    |                             |
+| 80 | qemu                        |
+
+
+
+# working direcxtory
+w="/tmp/gentoo"
+
+mkdir $w
+
+#  rm -rf $w
+
+*** 70
+
+# chown root /usr/bin/weston-launch
+# chmod +s /usr/bin/weston-launch
+
+passwd
+
+# groupadd weston-launch
+
+# usermod -a -G weston-launch 
+
+# useradd -m -G users,wheel,audio,usb,video,weston-launch 
+useradd -m -G users,wheel,audio,usb,video
+
+
+# sed -e 's/#rc_sys=""/rc_sys="docker"/g' -i /etc/rc.conf
+
+cat /etc/rc.conf | grep rc_sys
+
+
+sed -e 's/^rc_sys="docker"/rc_sys=""/g' -i /etc/rc.conf
+
+cat /etc/rc.conf | grep rc_sys
+
+
+ls -lha /bin/su
+
+
+chmod 4755 /bin/su
+
+
+# ######
+/home/larry/.bash_profile  # Set XDG_RUNTIME_DIR
+#!/bin/bash
+if test -z "${XDG_RUNTIME_DIR}"; then
+    export XDG_RUNTIME_DIR=/tmp/${UID}-runtime-dir
+    if ! test -d "${XDG_RUNTIME_DIR}"; then
+        mkdir "${XDG_RUNTIME_DIR}"
+        chmod 0700 "${XDG_RUNTIME_DIR}"
+    fi
+fi
+
+
+
+
+*** 30
+
+# in host, not in chroot
+
+# blkid | grep sdd
+
+# blkid | grep sdd[2|4]  # fails
+
+blkid | grep 'sdd[2|4]'
+
+
+blkid | grep 'sdc[2|5]'
+
+[2017-09-02 Sat 19:33]
+
+
+u2=$( blkid | awk '/sdc2/{print $2}' ); echo $u2
+u5=$( blkid | awk '/sdc5/{print $2}' ); echo $u5
+
+
+cat <<EOF > $w/etc/fstab
+
+$u5   /            ext4    noatime              0 1
+$u2   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+[2017-08-28 Mon 15:56]
+
+
+u2=$( blkid | awk '/sdd2/{print $2}' ); echo $u2
+u4=$( blkid | awk '/sdd4/{print $2}' ); echo $u4
+
+
+u2=$( blkid | awk '/sdd2/{print $2}' ); echo $u2
+u5=$( blkid | awk '/sdd4/{print $2}' ); echo $u4
+
+
+cat <<EOF > $w/etc/fstab
+
+$u2   /            ext4    noatime              0 1
+$u2   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
+
+
+[2017-08-23 Wed 13:00]
+
+/dev/sdd2: UUID="462818f4-1739-40ac-8274-31579797e90a" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="5ff4aa27-c35e-4c4d-ac7a-64eb4c86da31" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+
+
+cat <<EOF > $w/etc/fstab
+UUID="5ff4aa27-c35e-4c4d-ac7a-64eb4c86da31"   /            ext4    noatime              0 1
+UUID="462818f4-1739-40ac-8274-31579797e90a"   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+[2017-08-22 Tue 16:40]
+
+/dev/sdd2: UUID="0dd60430-7730-4a73-b3dd-8302cff58e4f" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="ffe43167-f83e-48e2-ab8c-c282d50ab9ab" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=ffe43167-f83e-48e2-ab8c-c282d50ab9ab   /            ext4    noatime              0 1
+UUID=0dd60430-7730-4a73-b3dd-8302cff58e4f   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+[2017-08-21 Mon 11:00]
+
+/dev/sdd2: UUID="a919bfd2-86f1-4525-a2a5-0c5e5d772f53" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="842201ec-b1a3-4c36-a7db-df58894c3c05" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=842201ec-b1a3-4c36-a7db-df58894c3c05   /            ext4    noatime              0 1
+UUID=a919bfd2-86f1-4525-a2a5-0c5e5d772f53   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
+
+[2017-08-18 Fri 15:59]
+
+/dev/sdd2: UUID="aabd4c5d-ef46-4855-b103-326305fb2d4e" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="7b1e0c1e-f717-4235-ba0a-d879269d3ba9" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=7b1e0c1e-f717-4235-ba0a-d879269d3ba9   /            ext4    noatime              0 1
+UUID=aabd4c5d-ef46-4855-b103-326305fb2d4e   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+[2017-07-28 Fri 13:59]
+
+/dev/sdd2: UUID="b6dc3206-3855-4783-9f35-b49de028fc02" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="56d017fd-cbaf-4a24-a9d2-5b5cc301de4a" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+
+
+cat <<EOF > $w/etc/fstab
+UUID=56d017fd-cbaf-4a24-a9d2-5b5cc301de4a   /            ext4    noatime              0 1
+UUID=b6dc3206-3855-4783-9f35-b49de028fc02   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
+[2017-07-27 Thu 14:46]
+
+/dev/sdd2: UUID="24e3087d-c152-466a-b511-da117afc035e" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="fb2492c3-645d-490a-914d-b0e305e94c65" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=fb2492c3-645d-490a-914d-b0e305e94c65   /            ext4    noatime              0 1
+UUID=24e3087d-c152-466a-b511-da117afc035e   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
+
+
+[2017-07-27 Thu 08:39]
+
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd2: UUID="c1bf6984-677a-4a01-9f15-15d7c48a6315" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+/dev/sdd4: UUID="aaad666e-3f21-4ff5-a615-10cb4b2ce797" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=aaad666e-3f21-4ff5-a615-10cb4b2ce797   /            ext4    noatime              0 1
+UUID=c1bf6984-677a-4a01-9f15-15d7c48a6315   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
+
+
+[2017-07-26 Wed 10:35]
+
+/dev/sdd2: UUID="630da936-4ef5-4442-9cde-36014501ad06" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="11571776-168b-49a0-9b90-7d984240e9f4" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+cat <<EOF > $w/etc/fstab
+UUID=11571776-168b-49a0-9b90-7d984240e9f4   /            ext4    noatime              0 1
+UUID=630da936-4ef5-4442-9cde-36014501ad06   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
+[2017-07-25 Tue 13:00]
+
+/dev/sdd2: UUID="9dda390a-c02d-4e25-b6f5-f43d7be1e3ba" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="c6a25768-a32d-47e2-b9a2-db06588c4292" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=c6a25768-a32d-47e2-b9a2-db06588c4292   /            ext4    noatime              0 1
+UUID=9dda390a-c02d-4e25-b6f5-f43d7be1e3ba   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+[2017-07-25 Tue 11:23]
+
+
+/dev/sdd2: UUID="53c1c14e-2eaf-43d6-baea-5a0c381b8611" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="c1baf8da-f55b-4630-b661-235a080a9eb2" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=c1baf8da-f55b-4630-b661-235a080a9eb2   /            ext4    noatime              0 1
+UUID=53c1c14e-2eaf-43d6-baea-5a0c381b8611   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
+[2017-07-25 Tue 07:51]
+
+/dev/sdd2: UUID="fe731ec4-9455-4125-8369-56a39ddaec6d" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
+/dev/sdd4: UUID="bfc16de4-d998-4ca3-8ac6-904720f53bcb" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
+/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=bfc16de4-d998-4ca3-8ac6-904720f53bcb   /            ext4    noatime              0 1
+UUID=fe731ec4-9455-4125-8369-56a39ddaec6d   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+[2017-07-24 Mon 15:21]
+
+/dev/sdd2: UUID="aec472a9-263b-4352-a738-46d3cd128135" TYPE="ext2" PARTLABEL="boot" PARTUUID="6af13b38-807c-4f05-9485-51b3414ba211"
+/dev/sdd4: UUID="e6793870-c974-474c-bd71-75514446bdad" TYPE="ext4" PARTLABEL="fs2" PARTUUID="f2c7e124-43c8-4d46-b24e-340c0cb876e9"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="1ecba64d-0ac4-4eaa-9434-b74631d723c5"
+/dev/sdd3: UUID="994231e5-a5b4-4888-9257-63e740d66cd7" TYPE="ext4" PARTLABEL="fs1" PARTUUID="78c3ed38-4b23-4b9f-9558-f8110e30aef7"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=e6793870-c974-474c-bd71-75514446bdad   /            ext4    noatime              0 1
+UUID=aec472a9-263b-4352-a738-46d3cd128135   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
+[2017-07-24 Mon 08:58]
+
+/dev/sdd2: UUID="fedf8485-1557-49e6-9ec5-57c835468a2c" TYPE="ext2" PARTLABEL="boot" PARTUUID="6af13b38-807c-4f05-9485-51b3414ba211"
+/dev/sdd4: UUID="0c523eeb-807d-480d-9374-65ccb0d79f8e" TYPE="ext4" PARTLABEL="fs2" PARTUUID="f2c7e124-43c8-4d46-b24e-340c0cb876e9"
+/dev/sdd1: PARTLABEL="grub" PARTUUID="1ecba64d-0ac4-4eaa-9434-b74631d723c5"
+/dev/sdd3: UUID="994231e5-a5b4-4888-9257-63e740d66cd7" TYPE="ext4" PARTLABEL="fs1" PARTUUID="78c3ed38-4b23-4b9f-9558-f8110e30aef7"
+
+
+cat <<EOF > $w/etc/fstab
+UUID=0c523eeb-807d-480d-9374-65ccb0d79f8e  /            ext4    noatime              0 1
+UUID=fedf8485-1557-49e6-9ec5-57c835468a2c  /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
+*** 40
+
+thedir=$w
+
+mount -t proc proc  ${thedir}/proc
+mount --rbind /sys  ${thedir}/sys
+mount --make-rslave ${thedir}/sys
+mount --rbind /dev  ${thedir}/dev
+mount --make-rslave ${thedir}/dev
+
+chroot ${thedir} /bin/bash
+source /etc/profile
+export PS1="(chroot) $PS1"
+
+mount -o size=90%,noatime,nodiratime -t tmpfs tmpfs /tmp
+
+# mkdir /var/tmp/portage
+
+mount -o size=90%,noatime,nodiratime,uid=portage,gid=portage,mode=775 -t tmpfs tmpfs /var/tmp/portage 
+
+
+
+
+exit
+cd
+
+umount -l ${thedir}/dev{/shm,/pts,}
+umount -l ${thedir}{/sys,/proc}
+
+
+umount /dev/sdd2
+umount /dev/sdd4 -l
+lsblk
+
+
+
+umount /dev/sdc2
+umount /dev/sdc5 -l
+lsblk
+
+
+umount /dev/sdb2
+
+umount /dev/sdb4 -l
+
+lsblk
+
+
+
+*** 80
+
+Control A
+C
+quit
+
+
+qemu-system-x86_64 -m 1G -drive file=/dev/sdd 
+
+
+qemu-system-x86_64 -m 1G -drive file=/dev/sdc
+
+
+
+
+qemu-system-x86_64 \
+    -kernel /tmp/gentoo/usr/src/linux/arch/x86_64/boot/bzImage \
+    -nographic -append "console=ttyS0" -enable-kvm -hdb /dev/sdd root=/dev/sdd4 ro
+
+
+
+qemu-system-x86_64 -m 1G -drive file=/dev/sdb
+
+qemu-kvm -hdb <device>
+
+
+
+
+*** 50
+
+grub-install /dev/sdd
+
+grub-install /dev/sdc
+
+cd /usr/src/linux
+
+
+emerge -pv hardened-sources
+
+
+KERNELVER=4.8.17-hardened-r2-x11
+
+KERNELVER=4.7.10-hardened
+
+KERNELVER=4.4.8-r1-hardened-chrome
+
+KERNELVER=4.4.8-r1-hardened
+
+
+EXTENSION=20170902
+
+cp .config /boot/config-${KERNELVER}-${EXTENSION}
+cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
+cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
+cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
+
+
+# add rootwait
+sed -i 's/#GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="rootwait"/' /etc/default/grub 
+
+# sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="rootwait"/GRUB_CMDLINE_LINUX_DEFAULT="rootwait nouveau.modeset=0"/' /etc/default/grub 
+
+cat /etc/default/grub | grep GRUB_CMDLINE_LINUX_DEFAULT
+
+# update grub.cfg
+/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
+
+
+
+
+*** 16
+
+echo $w
+
+# sdd
+mount /dev/sdd4 $w
+
+#     mkdir $w/boot
+
+mount /dev/sdd2 $w/boot
+
+lsblk
+
+
+# sdb
+mount /dev/sdb4 $w
+
+mkdir $w/boot
+
+mount /dev/sdb2 $w/boot
+
+
+
+# sdc
+mount /dev/sdc5 $w
+
+#  mkdir $w/boot
+
+mount /dev/sdc2 $w/boot
+
+
+
+umount $w/boot
+
+umount $w
+
+
+
+*** 20
+
+
+s=$( ls /tmp/*.tar* )
+
+echo $s
+
+
+time nice -10 \
+tar xvpf \
+$s \
+-C $w \
+--xattrs
+
+
+[2017-09-02 Sat 17:54] stage4_20170901.tar.xz
+
+non-X
+
+
+real    63m24.701s
+user    0m51.039s
+sys     0m15.795s
+
+
+
+
+
+
+[2017-08-30 Wed 09:26]  stage4_v103_20170829.tar.xz
+
+real    17m38.701s
+user    1m0.871s
+sys     0m17.222s
+
+
+
+
+[2017-08-28 Mon 12:54]  stage4_20170828.tar.xz
+
+
+real    9m15.152s
+user    0m42.210s
+sys     0m12.277s
+
+
+
+
+[2017-08-23 Wed 11:55]  stage4_20170823.tar.xz
+
+real    3m48.557s
+user    0m31.381s
+sys     0m10.443s
+
+
+
+
+
+[2017-08-22 Tue 16:36]  stage4_20170822.tar.xz
+
+
+real    3m46.218s
+user    0m33.689s
+sys     0m10.666s
+
+
+
+
+[2017-08-21 Mon 10:54]  stage4_20170821.tar.xz
+
+real    3m29.513s
+user    0m34.650s
+sys     0m12.200s
+
+
+[2017-08-18 Fri 15:49]  stage4_20170818.tar.xz
+
+real    3m57.401s
+user    0m32.251s
+sys     0m11.775s
+
+
+
+[2017-07-28 Fri 12:41] stage4_pro_k448_wes_gru_chr_ema_git_20170728.tar.xz
+
+real    17m42.998s
+user    0m48.620s
+sys     0m15.558s
+
+
+
+[2017-07-27 Thu 14:56] stage4_pro_ker448_weston_grub_20170727.tar.xz
+
+real    9m44.161s
+user    0m34.460s
+sys     0m12.532s
+
+
+[2017-07-26 Wed 16:50]  stage4_pro_ker448_weston_grub_20170726.tar.xz
+
+real    9m15.944s
+user    0m33.489s
+sys     0m12.687s
+
+
+[2017-07-26 Wed 10:09]  /tmp/stage4_20170726_nouveau.tar_kernel4.4.8.r1.xz
+
+real    24m59.655s
+user    0m45.083s
+sys     0m16.642s
+
+
+
+[2017-07-25 Tue 12:52]  stage4_20170725_proxychains_grub_kernel_weston_nouveau.tar.xz
+
+real    8m14.568s
+user    0m34.795s
+sys     0m12.772s
+
+
+[2017-07-25 Tue 11:06] stage4_20170725_proxychains_grub_kernel_weston_nvidia.tar.xz
+
+real    14m9.129s
+user    0m42.870s
+sys     0m14.319s
+
+
+
+[2017-07-25 Tue 07:46]  /tmp/stage4_20170724_proxychains_grub_kernel_weston.tar.xz
+
+real    4m48.877s
+user    0m34.082s
+sys     0m12.742s
+
+
+
+
+
+[2017-07-24 Mon 15:21]  stage4_20170724_proxychains_grub_kernel.tar.xz
+
+real    3m34.507s
+user    0m29.374s
+sys     0m11.601s
+
+
+
+
+[2017-07-24 Mon 08:39]
+
+real    17m49.087s
+user    0m43.354s
+sys     0m14.106s
+
+
+
+[2017-07-21 Fri 17:05]  # /tmp/stage4_20170721_grub_proxychains_kernel_nvidia_X.tar.xz
+
+real    16m29.241s
+user    0m43.491s
+sys     0m14.129s
+
+3.2G    /tmp/gentoo
+3.1G    /tmp/gentoo/usr
+36M     /tmp/gentoo/lib64
+32M     /tmp/gentoo/var
+8.9M    /tmp/gentoo/etc
+8.9M    /tmp/gentoo/bin
+6.0M    /tmp/gentoo/sbin
+4.3M    /tmp/gentoo/boot
+3.1M    /tmp/gentoo/lib32
+1.1M    /tmp/gentoo/opt
+
+
+
+
+
+[2017-07-21 Fri 10:06] # stage4_20170721_grub_proxychains_kernel_nvidia.tar.xz
+
+real    4m26.215s
+user    0m29.111s
+sys     0m11.571s
+
+2.3G    /tmp/gentoo/usr
+2.3G    /tmp/gentoo
+21M     /tmp/gentoo/var
+20M     /tmp/gentoo/lib64
+8.9M    /tmp/gentoo/bin
+8.7M    /tmp/gentoo/etc
+6.0M    /tmp/gentoo/sbin
+4.3M    /tmp/gentoo/boot
+3.1M    /tmp/gentoo/lib32
+
+
+[2017-07-20 Thu 10:05]  # /tmp/wd/tmp/stage4_20170720_nvidia.tar.xz
+
+real    15m44.457s
+user    0m43.207s
+sys     0m14.088s
+
+du -hd1 $w | sort -rh
+3.1G    /tmp/gentoo
+3.0G    /tmp/gentoo/usr
+36M     /tmp/gentoo/lib64
+32M     /tmp/gentoo/var
+13M     /tmp/gentoo/boot
+8.9M    /tmp/gentoo/etc
+8.9M    /tmp/gentoo/bin
+6.0M    /tmp/gentoo/sbin
+3.1M    /tmp/gentoo/lib32
+1.1M    /tmp/gentoo/opt
+12K     /tmp/gentoo/lost+found
+6.0K    /tmp/gentoo/home
+4.0K    /tmp/gentoo/root
+2.0K    /tmp/gentoo/run
+1.0K    /tmp/gentoo/tmp
+1.0K    /tmp/gentoo/sys
+1.0K    /tmp/gentoo/proc
+1.0K    /tmp/gentoo/mnt
+1.0K    /tmp/gentoo/media
+1.0K    /tmp/gentoo/dev
+localhost c5766 # 
+
+[2017-07-18 Tue 08:06]  # nvidia
+
+real    7m57.233s
+user    0m41.983s
+sys     0m14.061s
+
+3.1G    /tmp/gentoo
+3.0G    /tmp/gentoo/usr
+36M     /tmp/gentoo/lib64
+32M     /tmp/gentoo/var
+8.9M    /tmp/gentoo/etc
+8.9M    /tmp/gentoo/bin
+8.7M    /tmp/gentoo/boot
+6.3M    /tmp/gentoo/sbin
+3.1M    /tmp/gentoo/lib32
+1.1M    /tmp/gentoo/opt
+12K     /tmp/gentoo/lost+found
+6.0K    /tmp/gentoo/home
+5.0K    /tmp/gentoo/root
+2.0K    /tmp/gentoo/run
+1.0K    /tmp/gentoo/tmp
+1.0K    /tmp/gentoo/sys
+1.0K    /tmp/gentoo/proc
+1.0K    /tmp/gentoo/mnt
+1.0K    /tmp/gentoo/media
+1.0K    /tmp/gentoo/dev
+
+
+
+[2017-07-12 Wed 16:10]
+
+real    10m28.308s
+user    0m37.455s
+sys     0m13.185s
+
+
+2.7G    /tmp/gentoo
+2.5G    /tmp/gentoo/usr
+201M    /tmp/gentoo/lib64
+29M     /tmp/gentoo/var
+8.9M    /tmp/gentoo/etc
+8.9M    /tmp/gentoo/bin
+8.8M    /tmp/gentoo/boot
+6.3M    /tmp/gentoo/sbin
+3.1M    /tmp/gentoo/lib32
+12K     /tmp/gentoo/lost+found
+6.0K    /tmp/gentoo/home
+4.0K    /tmp/gentoo/root
+2.0K    /tmp/gentoo/run
+1.0K    /tmp/gentoo/tmp
+1.0K    /tmp/gentoo/sys
+1.0K    /tmp/gentoo/proc
+1.0K    /tmp/gentoo/opt
+1.0K    /tmp/gentoo/mnt
+1.0K    /tmp/gentoo/media
+1.0K    /tmp/gentoo/dev
+
+
+[2017-07-12 Wed 11:35]
+
+real    6m18.298s
+user    0m30.202s
+sys     0m11.409s
+
+du -hd1 $w | sort -rh
+
+2.2G    /tmp/gentoo/usr
+2.2G    /tmp/gentoo
+21M     /tmp/gentoo/var
+19M     /tmp/gentoo/lib64
+8.9M    /tmp/gentoo/bin
+8.7M    /tmp/gentoo/etc
+6.3M    /tmp/gentoo/sbin
+4.4M    /tmp/gentoo/boot
+3.1M    /tmp/gentoo/lib32
+12K     /tmp/gentoo/lost+found
+6.0K    /tmp/gentoo/home
+4.0K    /tmp/gentoo/root
+2.0K    /tmp/gentoo/run
+1.0K    /tmp/gentoo/tmp
+1.0K    /tmp/gentoo/sys
+1.0K    /tmp/gentoo/proc
+1.0K    /tmp/gentoo/opt
+1.0K    /tmp/gentoo/mnt
+1.0K    /tmp/gentoo/media
+1.0K    /tmp/gentoo/dev
+
+
+[2017-07-12 Wed 10:50]
+
+real    4m30.005s
+user    0m30.476s
+sys     0m11.249s
+
+du -hd1 $w | sort -rh
+
+2.2G    /tmp/gentoo/usr
+2.2G    /tmp/gentoo
+21M     /tmp/gentoo/var
+19M     /tmp/gentoo/lib64
+8.9M    /tmp/gentoo/bin
+8.7M    /tmp/gentoo/etc
+6.0M    /tmp/gentoo/sbin
+4.4M    /tmp/gentoo/boot
+3.1M    /tmp/gentoo/lib32
+12K     /tmp/gentoo/lost+found
+6.0K    /tmp/gentoo/home
+4.0K    /tmp/gentoo/root
+2.0K    /tmp/gentoo/run
+1.0K    /tmp/gentoo/tmp
+1.0K    /tmp/gentoo/sys
+1.0K    /tmp/gentoo/proc
+1.0K    /tmp/gentoo/opt
+1.0K    /tmp/gentoo/mnt
+1.0K    /tmp/gentoo/media
+1.0K    /tmp/gentoo/dev
+
+
+
+*** 10
+
+
+# boot
+mkfs.ext2 -T small /dev/sdd2
+
+# root 
+mkfs.ext4 -j -T small /dev/sdd4
+
+
+# ##################
+
+# boot
+mkfs.ext2 -T small /dev/sdc2
+
+# fs1
+mkfs.ext4 -j -T small /dev/sdc4
+
+# fs2 
+mkfs.ext4 -j -T small /dev/sdc5
+
   
 ** kernel and package build
 
@@ -7253,853 +8165,6 @@ qemu-system-x86_64 \
 
 
 Exit the VM by hitting Ctl-a c then typing “quit” at the qemu monitor shell.
-
-
-
-** extract to usb and test
-
-|    |                             |
-| 10 | format usb                  |
-|    |                             |
-| 16 | mount                       |
-|    |                             |
-| 20 | extraction to usb           |
-|    |                             |
-| 30 | fstab                       |
-|    |                             |
-| 40 | chroot                      |
-|    |                             |
-| 50 | grub                        |
-|    |                             |
-| 70 | passwd, useradd, rc_sys, su |
-|    |                             |
-| 80 | qemu                        |
-
-
-
-# working direcxtory
-w="/tmp/gentoo"
-
-mkdir $w
-
-#  rm -rf $w
-
-*** 70
-
-# chown root /usr/bin/weston-launch
-# chmod +s /usr/bin/weston-launch
-
-passwd
-
-# groupadd weston-launch
-
-# usermod -a -G weston-launch 
-
-# useradd -m -G users,wheel,audio,usb,video,weston-launch 
-useradd -m -G users,wheel,audio,usb,video
-
-
-# sed -e 's/#rc_sys=""/rc_sys="docker"/g' -i /etc/rc.conf
-
-cat /etc/rc.conf | grep rc_sys
-
-
-sed -e 's/^rc_sys="docker"/rc_sys=""/g' -i /etc/rc.conf
-
-cat /etc/rc.conf | grep rc_sys
-
-chmod 4755 /bin/su
-
-
-# ######
-/home/larry/.bash_profile  # Set XDG_RUNTIME_DIR
-#!/bin/bash
-if test -z "${XDG_RUNTIME_DIR}"; then
-    export XDG_RUNTIME_DIR=/tmp/${UID}-runtime-dir
-    if ! test -d "${XDG_RUNTIME_DIR}"; then
-        mkdir "${XDG_RUNTIME_DIR}"
-        chmod 0700 "${XDG_RUNTIME_DIR}"
-    fi
-fi
-
-
-
-
-*** 30
-
-# in host, not in chroot
-
-# blkid | grep sdd
-
-# blkid | grep sdd[2|4]  # fails
-
-blkid | grep 'sdd[2|4]'
-
-
-[2017-08-28 Mon 15:56]
-
-
-u2=$( blkid | awk '/sdd2/{print $2}' ); echo $u2
-u4=$( blkid | awk '/sdd4/{print $2}' ); echo $u4
-
-
-
-cat <<EOF > $w/etc/fstab
-
-$u2   /            ext4    noatime              0 1
-$u2   /boot        ext2    defaults,noatime     0 2
-
-tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
-tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
-EOF
-
-cat $w/etc/fstab
-
-
-
-
-
-[2017-08-23 Wed 13:00]
-
-/dev/sdd2: UUID="462818f4-1739-40ac-8274-31579797e90a" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
-/dev/sdd4: UUID="5ff4aa27-c35e-4c4d-ac7a-64eb4c86da31" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
-/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
-/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
-
-
-cat <<EOF > $w/etc/fstab
-UUID="5ff4aa27-c35e-4c4d-ac7a-64eb4c86da31"   /            ext4    noatime              0 1
-UUID="462818f4-1739-40ac-8274-31579797e90a"   /boot        ext2    defaults,noatime     0 2
-
-tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
-tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
-EOF
-
-cat $w/etc/fstab
-
-[2017-08-22 Tue 16:40]
-
-/dev/sdd2: UUID="0dd60430-7730-4a73-b3dd-8302cff58e4f" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
-/dev/sdd4: UUID="ffe43167-f83e-48e2-ab8c-c282d50ab9ab" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
-/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
-/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
-
-
-cat <<EOF > $w/etc/fstab
-UUID=ffe43167-f83e-48e2-ab8c-c282d50ab9ab   /            ext4    noatime              0 1
-UUID=0dd60430-7730-4a73-b3dd-8302cff58e4f   /boot        ext2    defaults,noatime     0 2
-
-tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
-tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
-EOF
-
-cat $w/etc/fstab
-
-
-[2017-08-21 Mon 11:00]
-
-/dev/sdd2: UUID="a919bfd2-86f1-4525-a2a5-0c5e5d772f53" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
-/dev/sdd4: UUID="842201ec-b1a3-4c36-a7db-df58894c3c05" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
-/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
-/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
-
-
-cat <<EOF > $w/etc/fstab
-UUID=842201ec-b1a3-4c36-a7db-df58894c3c05   /            ext4    noatime              0 1
-UUID=a919bfd2-86f1-4525-a2a5-0c5e5d772f53   /boot        ext2    defaults,noatime     0 2
-
-tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
-tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
-EOF
-
-cat $w/etc/fstab
-
-
-
-
-[2017-08-18 Fri 15:59]
-
-/dev/sdd2: UUID="aabd4c5d-ef46-4855-b103-326305fb2d4e" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
-/dev/sdd4: UUID="7b1e0c1e-f717-4235-ba0a-d879269d3ba9" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
-/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
-/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
-
-
-cat <<EOF > $w/etc/fstab
-UUID=7b1e0c1e-f717-4235-ba0a-d879269d3ba9   /            ext4    noatime              0 1
-UUID=aabd4c5d-ef46-4855-b103-326305fb2d4e   /boot        ext2    defaults,noatime     0 2
-
-tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
-tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
-EOF
-
-cat $w/etc/fstab
-
-
-[2017-07-28 Fri 13:59]
-
-/dev/sdd2: UUID="b6dc3206-3855-4783-9f35-b49de028fc02" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
-/dev/sdd4: UUID="56d017fd-cbaf-4a24-a9d2-5b5cc301de4a" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
-/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
-/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
-
-
-
-cat <<EOF > $w/etc/fstab
-UUID=56d017fd-cbaf-4a24-a9d2-5b5cc301de4a   /            ext4    noatime              0 1
-UUID=b6dc3206-3855-4783-9f35-b49de028fc02   /boot        ext2    defaults,noatime     0 2
-
-tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
-tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
-EOF
-
-cat $w/etc/fstab
-
-
-
-[2017-07-27 Thu 14:46]
-
-/dev/sdd2: UUID="24e3087d-c152-466a-b511-da117afc035e" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
-/dev/sdd4: UUID="fb2492c3-645d-490a-914d-b0e305e94c65" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
-/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
-/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
-
-
-cat <<EOF > $w/etc/fstab
-UUID=fb2492c3-645d-490a-914d-b0e305e94c65   /            ext4    noatime              0 1
-UUID=24e3087d-c152-466a-b511-da117afc035e   /boot        ext2    defaults,noatime     0 2
-
-tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
-tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
-EOF
-
-cat $w/etc/fstab
-
-
-
-
-
-[2017-07-27 Thu 08:39]
-
-/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
-/dev/sdd2: UUID="c1bf6984-677a-4a01-9f15-15d7c48a6315" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
-/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
-/dev/sdd4: UUID="aaad666e-3f21-4ff5-a615-10cb4b2ce797" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
-
-
-cat <<EOF > $w/etc/fstab
-UUID=aaad666e-3f21-4ff5-a615-10cb4b2ce797   /            ext4    noatime              0 1
-UUID=c1bf6984-677a-4a01-9f15-15d7c48a6315   /boot        ext2    defaults,noatime     0 2
-
-tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
-tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
-EOF
-
-cat $w/etc/fstab
-
-
-
-
-
-[2017-07-26 Wed 10:35]
-
-/dev/sdd2: UUID="630da936-4ef5-4442-9cde-36014501ad06" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
-/dev/sdd4: UUID="11571776-168b-49a0-9b90-7d984240e9f4" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
-/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
-/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
-
-cat <<EOF > $w/etc/fstab
-UUID=11571776-168b-49a0-9b90-7d984240e9f4   /            ext4    noatime              0 1
-UUID=630da936-4ef5-4442-9cde-36014501ad06   /boot        ext2    defaults,noatime     0 2
-
-tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
-tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
-EOF
-
-cat $w/etc/fstab
-
-
-
-[2017-07-25 Tue 13:00]
-
-/dev/sdd2: UUID="9dda390a-c02d-4e25-b6f5-f43d7be1e3ba" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
-/dev/sdd4: UUID="c6a25768-a32d-47e2-b9a2-db06588c4292" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
-/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
-/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
-
-
-cat <<EOF > $w/etc/fstab
-UUID=c6a25768-a32d-47e2-b9a2-db06588c4292   /            ext4    noatime              0 1
-UUID=9dda390a-c02d-4e25-b6f5-f43d7be1e3ba   /boot        ext2    defaults,noatime     0 2
-
-tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
-tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
-EOF
-
-cat $w/etc/fstab
-
-
-[2017-07-25 Tue 11:23]
-
-
-/dev/sdd2: UUID="53c1c14e-2eaf-43d6-baea-5a0c381b8611" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
-/dev/sdd4: UUID="c1baf8da-f55b-4630-b661-235a080a9eb2" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
-/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
-/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
-
-
-cat <<EOF > $w/etc/fstab
-UUID=c1baf8da-f55b-4630-b661-235a080a9eb2   /            ext4    noatime              0 1
-UUID=53c1c14e-2eaf-43d6-baea-5a0c381b8611   /boot        ext2    defaults,noatime     0 2
-
-tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
-tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
-EOF
-
-cat $w/etc/fstab
-
-
-
-[2017-07-25 Tue 07:51]
-
-/dev/sdd2: UUID="fe731ec4-9455-4125-8369-56a39ddaec6d" TYPE="ext2" PARTLABEL="boot" PARTUUID="cd492c2f-ca04-407b-a517-eef8d435fb42"
-/dev/sdd4: UUID="bfc16de4-d998-4ca3-8ac6-904720f53bcb" TYPE="ext4" PARTLABEL="fs2" PARTUUID="b3478383-11a1-4cc7-aa02-870c62049d6c"
-/dev/sdd1: PARTLABEL="grub" PARTUUID="261461a3-2d84-4114-83f1-c7ceea80a1b3"
-/dev/sdd3: UUID="92648d58-2235-485b-9eb5-7c572fa80c45" TYPE="ext4" PARTLABEL="fs1" PARTUUID="a24be679-97c0-41a6-9d9c-f7f759d42927"
-
-
-cat <<EOF > $w/etc/fstab
-UUID=bfc16de4-d998-4ca3-8ac6-904720f53bcb   /            ext4    noatime              0 1
-UUID=fe731ec4-9455-4125-8369-56a39ddaec6d   /boot        ext2    defaults,noatime     0 2
-
-tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
-tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
-EOF
-
-cat $w/etc/fstab
-
-
-[2017-07-24 Mon 15:21]
-
-/dev/sdd2: UUID="aec472a9-263b-4352-a738-46d3cd128135" TYPE="ext2" PARTLABEL="boot" PARTUUID="6af13b38-807c-4f05-9485-51b3414ba211"
-/dev/sdd4: UUID="e6793870-c974-474c-bd71-75514446bdad" TYPE="ext4" PARTLABEL="fs2" PARTUUID="f2c7e124-43c8-4d46-b24e-340c0cb876e9"
-/dev/sdd1: PARTLABEL="grub" PARTUUID="1ecba64d-0ac4-4eaa-9434-b74631d723c5"
-/dev/sdd3: UUID="994231e5-a5b4-4888-9257-63e740d66cd7" TYPE="ext4" PARTLABEL="fs1" PARTUUID="78c3ed38-4b23-4b9f-9558-f8110e30aef7"
-
-
-cat <<EOF > $w/etc/fstab
-UUID=e6793870-c974-474c-bd71-75514446bdad   /            ext4    noatime              0 1
-UUID=aec472a9-263b-4352-a738-46d3cd128135   /boot        ext2    defaults,noatime     0 2
-
-tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
-tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
-EOF
-
-cat $w/etc/fstab
-
-
-
-[2017-07-24 Mon 08:58]
-
-/dev/sdd2: UUID="fedf8485-1557-49e6-9ec5-57c835468a2c" TYPE="ext2" PARTLABEL="boot" PARTUUID="6af13b38-807c-4f05-9485-51b3414ba211"
-/dev/sdd4: UUID="0c523eeb-807d-480d-9374-65ccb0d79f8e" TYPE="ext4" PARTLABEL="fs2" PARTUUID="f2c7e124-43c8-4d46-b24e-340c0cb876e9"
-/dev/sdd1: PARTLABEL="grub" PARTUUID="1ecba64d-0ac4-4eaa-9434-b74631d723c5"
-/dev/sdd3: UUID="994231e5-a5b4-4888-9257-63e740d66cd7" TYPE="ext4" PARTLABEL="fs1" PARTUUID="78c3ed38-4b23-4b9f-9558-f8110e30aef7"
-
-
-cat <<EOF > $w/etc/fstab
-UUID=0c523eeb-807d-480d-9374-65ccb0d79f8e  /            ext4    noatime              0 1
-UUID=fedf8485-1557-49e6-9ec5-57c835468a2c  /boot        ext2    defaults,noatime     0 2
-
-tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
-tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
-EOF
-
-cat $w/etc/fstab
-
-
-
-*** 40
-
-thedir=$w
-
-mount -t proc proc  ${thedir}/proc
-mount --rbind /sys  ${thedir}/sys
-mount --make-rslave ${thedir}/sys
-mount --rbind /dev  ${thedir}/dev
-mount --make-rslave ${thedir}/dev
-
-chroot ${thedir} /bin/bash
-source /etc/profile
-export PS1="(chroot) $PS1"
-
-mount -o size=90%,noatime,nodiratime -t tmpfs tmpfs /tmp
-
-# mkdir /var/tmp/portage
-
-mount -o size=90%,noatime,nodiratime,uid=portage,gid=portage,mode=775 -t tmpfs tmpfs /var/tmp/portage 
-
-
-
-
-exit
-cd
-
-umount -l ${thedir}/dev{/shm,/pts,}
-umount -l ${thedir}{/sys,/proc}
-
-
-umount /dev/sdd2
-umount /dev/sdd4 -l
-lsblk
-
-
-
-umount /dev/sdb2
-
-umount /dev/sdb4 -l
-
-lsblk
-
-
-
-*** 80
-
-Control A
-C
-quit
-
-
-qemu-system-x86_64 -m 1G -drive file=/dev/sdd 
-
-
-
-qemu-system-x86_64 \
-    -kernel /tmp/gentoo/usr/src/linux/arch/x86_64/boot/bzImage \
-    -nographic -append "console=ttyS0" -enable-kvm -hdb /dev/sdd root=/dev/sdd4 ro
-
-
-
-qemu-system-x86_64 -m 1G -drive file=/dev/sdb
-
-qemu-kvm -hdb <device>
-
-
-
-
-*** 50
-
-grub-install /dev/sdd
-
-cd /usr/src/linux
-
-
-emerge -pv hardened-sources
-
-
-KERNELVER=4.8.17-hardened-r2-x11
-
-KERNELVER=4.7.10-hardened
-
-KERNELVER=4.4.8-r1-hardened-chrome
-
-
-EXTENSION=201708230
-
-cp .config /boot/config-${KERNELVER}-${EXTENSION}
-cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
-cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
-cp -a .config ../${KERNELVER}-${EXTENSION}.config.bk
-
-
-# add rootwait
-sed -i 's/#GRUB_CMDLINE_LINUX_DEFAULT=""/GRUB_CMDLINE_LINUX_DEFAULT="rootwait"/' /etc/default/grub 
-
-# sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="rootwait"/GRUB_CMDLINE_LINUX_DEFAULT="rootwait nouveau.modeset=0"/' /etc/default/grub 
-
-cat /etc/default/grub | grep GRUB_CMDLINE_LINUX_DEFAULT
-
-# update grub.cfg
-/usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg    # failed in tmpfs, must repeat after transplantation
-
-
-
-
-*** 16
-
-echo $w
-
-# sdd
-mount /dev/sdd4 $w
-
-#     mkdir $w/boot
-
-mount /dev/sdd2 $w/boot
-
-lsblk
-
-
-# sdb
-mount /dev/sdb4 $w
-
-mkdir $w/boot
-
-mount /dev/sdb2 $w/boot
-
-
-
-umount $w/boot
-
-umount $w
-
-
-
-*** 20
-
-
-s=$( ls /tmp/*.tar* )
-
-echo $s
-
-
-time nice -10 \
-tar xvpf \
-$s \
--C $w \
---xattrs
-
-[2017-08-30 Wed 09:26]  stage4_v103_20170829.tar.xz
-
-real    17m38.701s
-user    1m0.871s
-sys     0m17.222s
-
-
-
-
-[2017-08-28 Mon 12:54]  stage4_20170828.tar.xz
-
-
-real    9m15.152s
-user    0m42.210s
-sys     0m12.277s
-
-
-
-
-[2017-08-23 Wed 11:55]  stage4_20170823.tar.xz
-
-real    3m48.557s
-user    0m31.381s
-sys     0m10.443s
-
-
-
-
-
-[2017-08-22 Tue 16:36]  stage4_20170822.tar.xz
-
-
-real    3m46.218s
-user    0m33.689s
-sys     0m10.666s
-
-
-
-
-[2017-08-21 Mon 10:54]  stage4_20170821.tar.xz
-
-real    3m29.513s
-user    0m34.650s
-sys     0m12.200s
-
-
-[2017-08-18 Fri 15:49]  stage4_20170818.tar.xz
-
-real    3m57.401s
-user    0m32.251s
-sys     0m11.775s
-
-
-
-[2017-07-28 Fri 12:41] stage4_pro_k448_wes_gru_chr_ema_git_20170728.tar.xz
-
-real    17m42.998s
-user    0m48.620s
-sys     0m15.558s
-
-
-
-[2017-07-27 Thu 14:56] stage4_pro_ker448_weston_grub_20170727.tar.xz
-
-real    9m44.161s
-user    0m34.460s
-sys     0m12.532s
-
-
-[2017-07-26 Wed 16:50]  stage4_pro_ker448_weston_grub_20170726.tar.xz
-
-real    9m15.944s
-user    0m33.489s
-sys     0m12.687s
-
-
-[2017-07-26 Wed 10:09]  /tmp/stage4_20170726_nouveau.tar_kernel4.4.8.r1.xz
-
-real    24m59.655s
-user    0m45.083s
-sys     0m16.642s
-
-
-
-[2017-07-25 Tue 12:52]  stage4_20170725_proxychains_grub_kernel_weston_nouveau.tar.xz
-
-real    8m14.568s
-user    0m34.795s
-sys     0m12.772s
-
-
-[2017-07-25 Tue 11:06] stage4_20170725_proxychains_grub_kernel_weston_nvidia.tar.xz
-
-real    14m9.129s
-user    0m42.870s
-sys     0m14.319s
-
-
-
-[2017-07-25 Tue 07:46]  /tmp/stage4_20170724_proxychains_grub_kernel_weston.tar.xz
-
-real    4m48.877s
-user    0m34.082s
-sys     0m12.742s
-
-
-
-
-
-[2017-07-24 Mon 15:21]  stage4_20170724_proxychains_grub_kernel.tar.xz
-
-real    3m34.507s
-user    0m29.374s
-sys     0m11.601s
-
-
-
-
-[2017-07-24 Mon 08:39]
-
-real    17m49.087s
-user    0m43.354s
-sys     0m14.106s
-
-
-
-[2017-07-21 Fri 17:05]  # /tmp/stage4_20170721_grub_proxychains_kernel_nvidia_X.tar.xz
-
-real    16m29.241s
-user    0m43.491s
-sys     0m14.129s
-
-3.2G    /tmp/gentoo
-3.1G    /tmp/gentoo/usr
-36M     /tmp/gentoo/lib64
-32M     /tmp/gentoo/var
-8.9M    /tmp/gentoo/etc
-8.9M    /tmp/gentoo/bin
-6.0M    /tmp/gentoo/sbin
-4.3M    /tmp/gentoo/boot
-3.1M    /tmp/gentoo/lib32
-1.1M    /tmp/gentoo/opt
-
-
-
-
-
-[2017-07-21 Fri 10:06] # stage4_20170721_grub_proxychains_kernel_nvidia.tar.xz
-
-real    4m26.215s
-user    0m29.111s
-sys     0m11.571s
-
-2.3G    /tmp/gentoo/usr
-2.3G    /tmp/gentoo
-21M     /tmp/gentoo/var
-20M     /tmp/gentoo/lib64
-8.9M    /tmp/gentoo/bin
-8.7M    /tmp/gentoo/etc
-6.0M    /tmp/gentoo/sbin
-4.3M    /tmp/gentoo/boot
-3.1M    /tmp/gentoo/lib32
-
-
-[2017-07-20 Thu 10:05]  # /tmp/wd/tmp/stage4_20170720_nvidia.tar.xz
-
-real    15m44.457s
-user    0m43.207s
-sys     0m14.088s
-
-du -hd1 $w | sort -rh
-3.1G    /tmp/gentoo
-3.0G    /tmp/gentoo/usr
-36M     /tmp/gentoo/lib64
-32M     /tmp/gentoo/var
-13M     /tmp/gentoo/boot
-8.9M    /tmp/gentoo/etc
-8.9M    /tmp/gentoo/bin
-6.0M    /tmp/gentoo/sbin
-3.1M    /tmp/gentoo/lib32
-1.1M    /tmp/gentoo/opt
-12K     /tmp/gentoo/lost+found
-6.0K    /tmp/gentoo/home
-4.0K    /tmp/gentoo/root
-2.0K    /tmp/gentoo/run
-1.0K    /tmp/gentoo/tmp
-1.0K    /tmp/gentoo/sys
-1.0K    /tmp/gentoo/proc
-1.0K    /tmp/gentoo/mnt
-1.0K    /tmp/gentoo/media
-1.0K    /tmp/gentoo/dev
-localhost c5766 # 
-
-[2017-07-18 Tue 08:06]  # nvidia
-
-real    7m57.233s
-user    0m41.983s
-sys     0m14.061s
-
-3.1G    /tmp/gentoo
-3.0G    /tmp/gentoo/usr
-36M     /tmp/gentoo/lib64
-32M     /tmp/gentoo/var
-8.9M    /tmp/gentoo/etc
-8.9M    /tmp/gentoo/bin
-8.7M    /tmp/gentoo/boot
-6.3M    /tmp/gentoo/sbin
-3.1M    /tmp/gentoo/lib32
-1.1M    /tmp/gentoo/opt
-12K     /tmp/gentoo/lost+found
-6.0K    /tmp/gentoo/home
-5.0K    /tmp/gentoo/root
-2.0K    /tmp/gentoo/run
-1.0K    /tmp/gentoo/tmp
-1.0K    /tmp/gentoo/sys
-1.0K    /tmp/gentoo/proc
-1.0K    /tmp/gentoo/mnt
-1.0K    /tmp/gentoo/media
-1.0K    /tmp/gentoo/dev
-
-
-
-[2017-07-12 Wed 16:10]
-
-real    10m28.308s
-user    0m37.455s
-sys     0m13.185s
-
-
-2.7G    /tmp/gentoo
-2.5G    /tmp/gentoo/usr
-201M    /tmp/gentoo/lib64
-29M     /tmp/gentoo/var
-8.9M    /tmp/gentoo/etc
-8.9M    /tmp/gentoo/bin
-8.8M    /tmp/gentoo/boot
-6.3M    /tmp/gentoo/sbin
-3.1M    /tmp/gentoo/lib32
-12K     /tmp/gentoo/lost+found
-6.0K    /tmp/gentoo/home
-4.0K    /tmp/gentoo/root
-2.0K    /tmp/gentoo/run
-1.0K    /tmp/gentoo/tmp
-1.0K    /tmp/gentoo/sys
-1.0K    /tmp/gentoo/proc
-1.0K    /tmp/gentoo/opt
-1.0K    /tmp/gentoo/mnt
-1.0K    /tmp/gentoo/media
-1.0K    /tmp/gentoo/dev
-
-
-[2017-07-12 Wed 11:35]
-
-real    6m18.298s
-user    0m30.202s
-sys     0m11.409s
-
-du -hd1 $w | sort -rh
-
-2.2G    /tmp/gentoo/usr
-2.2G    /tmp/gentoo
-21M     /tmp/gentoo/var
-19M     /tmp/gentoo/lib64
-8.9M    /tmp/gentoo/bin
-8.7M    /tmp/gentoo/etc
-6.3M    /tmp/gentoo/sbin
-4.4M    /tmp/gentoo/boot
-3.1M    /tmp/gentoo/lib32
-12K     /tmp/gentoo/lost+found
-6.0K    /tmp/gentoo/home
-4.0K    /tmp/gentoo/root
-2.0K    /tmp/gentoo/run
-1.0K    /tmp/gentoo/tmp
-1.0K    /tmp/gentoo/sys
-1.0K    /tmp/gentoo/proc
-1.0K    /tmp/gentoo/opt
-1.0K    /tmp/gentoo/mnt
-1.0K    /tmp/gentoo/media
-1.0K    /tmp/gentoo/dev
-
-
-[2017-07-12 Wed 10:50]
-
-real    4m30.005s
-user    0m30.476s
-sys     0m11.249s
-
-du -hd1 $w | sort -rh
-
-2.2G    /tmp/gentoo/usr
-2.2G    /tmp/gentoo
-21M     /tmp/gentoo/var
-19M     /tmp/gentoo/lib64
-8.9M    /tmp/gentoo/bin
-8.7M    /tmp/gentoo/etc
-6.0M    /tmp/gentoo/sbin
-4.4M    /tmp/gentoo/boot
-3.1M    /tmp/gentoo/lib32
-12K     /tmp/gentoo/lost+found
-6.0K    /tmp/gentoo/home
-4.0K    /tmp/gentoo/root
-2.0K    /tmp/gentoo/run
-1.0K    /tmp/gentoo/tmp
-1.0K    /tmp/gentoo/sys
-1.0K    /tmp/gentoo/proc
-1.0K    /tmp/gentoo/opt
-1.0K    /tmp/gentoo/mnt
-1.0K    /tmp/gentoo/media
-1.0K    /tmp/gentoo/dev
-
-
-
-*** 10
-
-
-# boot
-mkfs.ext2 -T small /dev/sdd2
-
-# root 
-mkfs.ext4 -j -T small /dev/sdd4
-
-
-# ##################
-
-# boot
-mkfs.ext2 -T small /dev/sdc2
-
-# fs1
-mkfs.ext4 -j -T small /dev/sdc4
-
-# fs2 
-mkfs.ext4 -j -T small /dev/sdc5
 
 
 

@@ -434,6 +434,11 @@ umount /dev/sdc5 -l
 lsblk
 
 
+umount /dev/sde2
+umount /dev/sde5 -l
+lsblk
+
+
 umount /dev/sdb2
 
 umount /dev/sdb4 -l
@@ -491,7 +496,7 @@ KERNELVER=4.4.8-r1-hardened-chrome
 KERNELVER=4.4.8-r1-hardened
 
 
-EXTENSION=20170902
+EXTENSION=20170904
 
 cp .config /boot/config-${KERNELVER}-${EXTENSION}
 cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
@@ -541,6 +546,14 @@ mount /dev/sdc5 $w
 #  mkdir $w/boot
 
 mount /dev/sdc2 $w/boot
+
+
+# sde
+mount /dev/sde5 $w
+
+#  mkdir $w/boot
+
+mount /dev/sde2 $w/boot
 
 
 
@@ -988,6 +1001,10 @@ mkfs.ext4 -j -T small /dev/sdc5
 | cifs                            |                                                                |
 | fuse                            |                                                                |
 |                                 | ker448-20170901                                                |
+|---------------------------------+----------------------------------------------------------------|
+|                                 | [2017-09-04 Mon 16:45]                                         |
+| loop, for squashfs              |                                                                |
+|                                 |                                                                |
 
 /var/log/portage/elog/summary.log
 
@@ -1062,6 +1079,8 @@ f="/tmp/ker448-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-do-qe-ms-ch-20170830"
 
 f="/tmp/ker448-20170901"
 
+f="/tmp/ker448-20170904"
+
 
 
 
@@ -1080,6 +1099,23 @@ make  && make modules_install
 time nice -10 \
 make -j 6 && make modules_install
 
+
+ker448-20170904"  on a usb
+
+make loop y
+real    0m41.504s
+user    0m24.707s
+sys     0m4.660s
+
+make loop m
+real    1m51.007s
+user    0m24.792s
+sys     0m4.679s
+
+
+
+
+ker448-20170901"
 real    11m36.797s
 user    14m36.522s
 sys     1m5.874s
@@ -1115,7 +1151,13 @@ https://wayland.freedesktop.org/xserver.html
 
 
 
-
+ Symbol: BLK_DEV_LOOP [=n] 
+  │ Prompt: Loopback device support 
+  │   Location:                     
+  │     -> Device Drivers           
+  │ (2)   -> Block devices (BLK_DEV [=y]) 
+  │   Defined at drivers/block/Kconfig:211
+  │   Depends on: BLK_DEV [=y] 
 
 
 

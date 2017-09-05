@@ -457,6 +457,9 @@ quit
 qemu-system-x86_64 -m 1G -drive file=/dev/sdd 
 
 
+qemu-system-x86_64 -m 1G -drive file=/dev/sde
+
+
 qemu-system-x86_64 -m 1G -drive file=/dev/sdc
 
 

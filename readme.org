@@ -561,9 +561,8 @@ mount /dev/sde2 $w/boot
 
 
 umount $w/boot
-
 umount $w
-
+lsblk
 
 
 *** 20

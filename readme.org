@@ -11,6 +11,8 @@
 |    |                             |
 | 20 | extraction to usb           |
 |    |                             |
+| 21 | extract squashfs            |
+|    |                             |
 | 30 | fstab                       |
 |    |                             |
 | 40 | chroot                      |
@@ -58,7 +60,16 @@ cat /etc/rc.conf | grep rc_sys
 ls -lha /bin/su
 
 
+# -rwx--x--x 1 root root 44K Sep  8 02:32 /bin/su
+# -rwsr-xr-x 1 root root 44K Sep  8 02:32 /bin/su
+
+
 chmod 4755 /bin/su
+
+
+cd /etc/init.d
+ln -s net.lo net.enp1s0
+rc-update add net.enp1s0 default
 
 
 # ######
@@ -88,8 +99,30 @@ blkid | grep 'sdd[2|4]'
 
 blkid | grep 'sdc[2|5]'
 
+[2017-09-11 Mon 09:21]  yusb  sdd
+
+
+u2=$( blkid | awk '/sdd2/{print $2}' ); echo $u2
+u4=$( blkid | awk '/sdd4/{print $2}' ); echo $u4
+
+
+cat <<EOF > $w/etc/fstab
+
+$u4   /            ext4    noatime              0 1
+$u2   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
 [2017-09-02 Sat 19:33]
 
+
+u2=$( blkid | awk '/sdd2/{print $2}' ); echo $u2
+u4=$( blkid | awk '/sdd4/{print $2}' ); echo $u4
 
 u2=$( blkid | awk '/sdc2/{print $2}' ); echo $u2
 u5=$( blkid | awk '/sdc5/{print $2}' ); echo $u5
@@ -499,7 +532,7 @@ KERNELVER=4.4.8-r1-hardened-chrome
 KERNELVER=4.4.8-r1-hardened
 
 
-EXTENSION=20170904
+EXTENSION=20170911
 
 cp .config /boot/config-${KERNELVER}-${EXTENSION}
 cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
@@ -565,6 +598,33 @@ umount $w
 lsblk
 
 
+*** 21
+
+
+s=$( ls /tmp/*.tar* )
+
+echo $s
+
+
+time nice -10 \
+tar xvpf \
+$s \
+-C $w \
+--xattrs
+
+https://askubuntu.com/questions/437880/extract-a-squashfs-to-an-existing-directory
+
+# sudo unsquashfs -f -d /media/location1 /media/location2/file.squashfs
+
+time nice -10 \
+unsquashfs -f -d $w $s
+
+time nice -10 \
+unsquashfs -d /tmp/test $s
+
+mount -o loop $s /tmp/test
+
+
 *** 20
 
 
@@ -578,6 +638,16 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+
+
+[2017-09-11 Mon 09:07] x21_20170910.tar.xz
+
+real    6m58.423s
+user    0m41.507s
+sys     0m13.108s
+
+
 
 
 [2017-09-02 Sat 17:54] stage4_20170901.tar.xz
@@ -9367,15 +9437,20 @@ umount -l /dev/sdd4
 |         2 | 3 131    |     | 3 131    | 0.1 | boot | /mnt/sdd2   |
 |           |          |     |          |     |      |             |
 |           |          |     |          |     |      |             |
+|-----------+----------+-----+----------+-----+------+-------------|
 |         3 |          |     | 131 3000 | 2.8 | fs1  | /mnt/sdd3   |
 |           |          |     |          |     |      |             |
-|         3 | 131 7000 |     | 131 6000 | 5.7 |      |             |
+|           |          |     | 131 2000 |     |      |             |
+|           |          |     |          |     |      |             |
+|           | 131 7000 |     | 131 6000 | 5.7 |      |             |
 |           |          |     |          |     |      |             |
 |           |          |     |          |     |      |             |
+|-----------+----------+-----+----------+-----+------+-------------|
 |         4 |          |     | 3000 -1  | 4.5 | fs2  | /mnt/sdd4   |
 |           |          |     |          |     |      |             |
-|         4 | 7000 -1  |     | 6000 -1  | 9.3 |      |             |
+|           | 7000 -1  |     | 6000 -1  | 9.3 |      |             |
 |           |          |     |          |     |      |             |
+|           |          |     | 2000 -1  |     |      |             |
 
 
 parted -a optimal /dev/sdc
@@ -9403,6 +9478,8 @@ name 2 boot
 
 
 # yusb 8g
+mkpart primary 131 2000    
+
 mkpart primary 131 3000    
 
 # 16g
@@ -9412,6 +9489,8 @@ name 3 fs1
 
 
 # yusb 8g
+mkpart primary 2000 -1     
+
 mkpart primary 3000 -1     
 
 # 16g

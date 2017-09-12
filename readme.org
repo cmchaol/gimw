@@ -99,6 +99,27 @@ blkid | grep 'sdd[2|4]'
 
 blkid | grep 'sdc[2|5]'
 
+[2017-09-12 Tue 16:31] yusb sdd
+
+u2=$( blkid | awk '/sdd2/{print $2}' ); echo $u2
+u4=$( blkid | awk '/sdd4/{print $2}' ); echo $u4
+
+
+cat <<EOF > $w/etc/fstab
+
+$u4   /            ext4    noatime              0 1
+$u2   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
+
+
 [2017-09-11 Mon 09:21]  yusb  sdd
 
 
@@ -532,7 +553,7 @@ KERNELVER=4.4.8-r1-hardened-chrome
 KERNELVER=4.4.8-r1-hardened
 
 
-EXTENSION=20170911
+EXTENSION=20170912
 
 cp .config /boot/config-${KERNELVER}-${EXTENSION}
 cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
@@ -638,6 +659,14 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+
+[2017-09-12 Tue 15:52]  q12_20170912.tar.xz
+
+
+real    31m19.994s
+user    0m1.654s
+sys     0m14.625s
 
 
 
@@ -1001,7 +1030,7 @@ mkfs.ext4 -j -T small /dev/sdc5
 ** kernel and package build
 
 
-*** ker448-20170901 
+*** ker448-20170912-2 
 
 | kernel configuration            |                                                                |
 |                                 | [2017-08-22 Tue 10:26]                                         |
@@ -1058,6 +1087,12 @@ mkfs.ext4 -j -T small /dev/sdc5
 |---------------------------------+----------------------------------------------------------------|
 |                                 | [2017-08-28 Mon 17:37]                                         |
 | docker                          | ker448-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-do-20170828          |
+|                                 |                                                                |
+|                                 | [2017-09-12 Tue 09:31]                                         |
+|                                 | ker448-20170912                                                |
+|                                 |                                                                |
+|                                 | [2017-09-12 Tue 10:40]                                         |
+|                                 | ker448-20170912-2                                              |
 |---------------------------------+----------------------------------------------------------------|
 |                                 | [2017-08-29 Tue 12:11]                                         |
 | qemu                            | ker448-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-do-qe-20170829       |
@@ -1153,6 +1188,10 @@ f="/tmp/ker448-20170901"
 
 f="/tmp/ker448-20170904"
 
+f="/tmp/ker448-20170912"
+
+f="/tmp/ker448-20170912-2"
+
 
 
 
@@ -1165,8 +1204,10 @@ cp defconfig $f.defconfig
 
 ls -l /tmp
 
-
+time \
 make  && make modules_install
+
+
 
 time nice -10 \
 make -j 6 && make modules_install
@@ -1231,9 +1272,76 @@ https://wayland.freedesktop.org/xserver.html
   │   Defined at drivers/block/Kconfig:211
   │   Depends on: BLK_DEV [=y] 
 
+Symbol: CFQ_GROUP_IOSCHED [=n]                                                                   │  
+  │ Type  : boolean                                                                                  │  
+  │ Prompt: CFQ Group Scheduling support                                                             │  
+  │   Location:                                                                                      │  
+  │     -> Enable the block layer (BLOCK [=y])                                                       │  
+  │       -> IO Schedulers                                                                           │  
+  │ (1)     -> CFQ I/O scheduler (IOSCHED_CFQ [=y])                                                  │  
+  │   Defined at block/Kconfig.iosched:35                                                            │  
+  │   Depends on: BLOCK [=y] && IOSCHED_CFQ [=y] && BLK_CGROUP [=y]                                  │  
+  │ 
 
+ Symbol: XFRM_ALGO [=n]                                                                           │  
+  │ Type  : tristate                                                                                 │  
+  │   Defined at net/xfrm/Kconfig:8                                                                  │  
+  │   Depends on: NET [=y]                                                                           │  
+  │   Selects: XFRM [=y] && CRYPTO [=y]                                                              │  
+  │   Selected by: XFRM_USER [=n] && NET [=y] && INET [=y] || XFRM_IPCOMP [=n] && NET [=y] || NET_KE │  
+  │  
 
+ Symbol: XFRM_USER [=m]                                                                           │  
+  │ Type  : tristate                                                                                 │  
+  │ Prompt: Transformation user configuration interface                                              │  
+  │   Location:                                                                                      │  
+  │     -> Networking support (NET [=y])                                                             │  
+  │ (1)   -> Networking options                                                                      │  
+  │   Defined at net/xfrm/Kconfig:13                                                                 │  
+  │   Depends on: NET [=y] && INET [=y]                                                              │  
+  │   Selects: XFRM_ALGO [=m]                                                                        │  
+  │   
 
+ Symbol: XFRM_ALGO [=n]                                                                           │  
+  │ Type  : tristate                                                                                 │  
+  │   Defined at net/xfrm/Kconfig:8                                                                  │  
+  │   Depends on: NET [=y]                                                                           │  
+  │   Selects: XFRM [=y] && CRYPTO [=y]                                                              │  
+  │   Selected by: XFRM_USER [=n] && NET [=y] && INET [=y] || XFRM_IPCOMP [=n] && NET [=y] || NET_KE │  
+  │  
+
+ Symbol: MACVLAN [=n]                                                                             │  
+  │ Type  : tristate                                                                                 │  
+  │ Prompt: MAC-VLAN support                                                                         │  
+  │   Location:                                                                                      │  
+  │     -> Device Drivers                                                                            │  
+  │       -> Network device support (NETDEVICES [=y])                                                │  
+  │ (1)     -> Network core driver support (NET_CORE [=y])                                           │  
+  │   Defined at drivers/net/Kconfig:121                                                             │  
+  │   Depends on: NETDEVICES [=y] && NET_CORE [=y]                                                   │  
+  │  
+Symbol: MEMCG_KMEM [=n]                                                                          │  
+  │ Type  : boolean                                                                                  │  
+  │ Prompt: Memory Resource Controller Kernel Memory accounting                                      │  
+  │   Location:                                                                                      │  
+  │     -> General setup                                                                             │  
+  │       -> Control Group support (CGROUPS [=y])                                                    │  
+  │ (1)     -> Memory Resource Controller for Control Groups (MEMCG [=y])                            │  
+  │   Defined at init/Kconfig:1045                                                                   │  
+  │   Depends on: CGROUPS [=y] && MEMCG [=y] && (SLUB [=y] || SLAB [=n])                             │  
+  │ 
+
+Symbol: EXT4_FS_POSIX_ACL [=n]                                                                   │  
+  │ Type  : boolean                                                                                  │  
+  │ Prompt: Ext4 POSIX Access Control Lists                                                          │  
+  │   Location:                                                                                      │  
+  │     -> File systems                                                                              │  
+  │ (1)   -> The Extended 4 (ext4) filesystem (EXT4_FS [=y])                                         │  
+  │   Defined at fs/ext4/Kconfig:76                                                                  │  
+  │   Depends on: BLOCK [=y] && EXT4_FS [=y]                                                         │  
+  │   Selects: FS_POSIX_ACL [=y]                                                                     │  
+  │   Selected by: EXT3_FS_POSIX_ACL [=n] && BLOCK [=y] && EXT3_FS [=n]                              │  
+  │ 
 
 
 

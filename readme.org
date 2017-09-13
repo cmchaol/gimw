@@ -30,7 +30,8 @@ w="/tmp/gentoo"
 
 mkdir $w
 
-#  rm -rf $w
+
+#    rm -rf $w
 
 *** 70
 
@@ -449,6 +450,9 @@ cat $w/etc/fstab
 
 *** 40
 
+echo $w
+
+
 thedir=$w
 
 mount -t proc proc  ${thedir}/proc
@@ -475,6 +479,7 @@ cd
 
 umount -l ${thedir}/dev{/shm,/pts,}
 umount -l ${thedir}{/sys,/proc}
+umount -l ${thedir}{/tmp,/var/tmp/portage}
 
 
 umount /dev/sdd2
@@ -553,7 +558,7 @@ KERNELVER=4.4.8-r1-hardened-chrome
 KERNELVER=4.4.8-r1-hardened
 
 
-EXTENSION=20170912
+EXTENSION=20170913
 
 cp .config /boot/config-${KERNELVER}-${EXTENSION}
 cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
@@ -659,6 +664,21 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+[2017-09-13 Wed 16:09]  q12_20170913-2.tar.xz
+
+
+real    9m9.520s
+user    0m53.386s
+sys     0m10.785s
+
+
+
+[2017-09-13 Wed 13:01]  q12_20170913.tar.xz
+
+real    6m44.140s
+user    0m42.184s
+sys     0m7.599s
 
 
 [2017-09-12 Tue 15:52]  q12_20170912.tar.xz
@@ -7983,11 +8003,11 @@ w="/tmp/wt"
 
 mkdir $w
 
-# rm -rf $w
+#    rm -rf $w
 
 *** 20
 
-s=$( ls /tmp/stage* )  
+s=$( ls /tmp/*.tar.xz )  
 
 echo $s
 

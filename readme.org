@@ -100,6 +100,29 @@ blkid | grep 'sdd[2|4]'
 
 blkid | grep 'sdc[2|5]'
 
+blkid | grep 'sda[2|4]'
+
+
+[2017-09-18 Mon 16:07]  b1 sda 279g 
+
+
+u2=$( blkid | awk '/sda2/{print $2}' ); echo $u2
+u4=$( blkid | awk '/sda4/{print $2}' ); echo $u4
+
+
+cat <<EOF > $w/etc/fstab
+
+$u4   /            ext4    noatime              0 1
+$u2   /boot        ext2    defaults,noatime     0 2
+
+tmpfs /tmp         tmpfs rw,nosuid,noatime,nodev,mode=1777 0 0
+tmpfs /var/tmp/portage tmpfs rw,nosuid,noatime,nodev,mode=775,uid=portage,gid=portage,x-mount.mkdir=775 0 0
+EOF
+
+cat $w/etc/fstab
+
+
+
 [2017-09-12 Tue 16:31] yusb sdd
 
 u2=$( blkid | awk '/sdd2/{print $2}' ); echo $u2
@@ -487,6 +510,11 @@ umount /dev/sdd4 -l
 lsblk
 
 
+umount /dev/sda2
+umount /dev/sda4 -l
+lsblk
+
+
 
 umount /dev/sdc2
 umount /dev/sdc5 -l
@@ -522,6 +550,9 @@ qemu-system-x86_64 -m 1G -drive file=/dev/sde
 qemu-system-x86_64 -m 1G -drive file=/dev/sdc
 
 
+qemu-system-x86_64 -m 1G -drive file=/dev/sda
+
+
 
 
 qemu-system-x86_64 \
@@ -542,6 +573,10 @@ qemu-kvm -hdb <device>
 grub-install /dev/sdd
 
 grub-install /dev/sdc
+
+grub-install /dev/sda
+
+
 
 cd /usr/src/linux
 
@@ -618,6 +653,15 @@ mount /dev/sde5 $w
 mount /dev/sde2 $w/boot
 
 
+# sdd
+mount /dev/sda4 $w
+
+#     mkdir $w/boot
+
+mount /dev/sda2 $w/boot
+
+lsblk
+
 
 umount $w/boot
 umount $w
@@ -656,6 +700,9 @@ mount -o loop $s /tmp/test
 
 s=$( ls /tmp/*.tar* )
 
+
+#   s=$( ls /mnt/sda6/os/*.tar* ) 
+
 echo $s
 
 
@@ -664,6 +711,15 @@ tar xvpf \
 $s \
 -C $w \
 --xattrs
+
+[2017-09-18 Mon 16:05]  b1 sda 279g  q12_20170913-2.tar.xz
+
+real    1m3.395s
+user    0m53.589s
+sys     0m11.054s
+
+
+
 
 [2017-09-13 Wed 16:09]  q12_20170913-2.tar.xz
 
@@ -9558,32 +9614,36 @@ umount -l /dev/sdd4
 
 # white y usb 8g
 
-| partition | a M      | a G | y mib    | y G | name | mount point |
-|-----------+----------+-----+----------+-----+------+-------------|
-|         1 | 1 3      |     | 1 3      |     | grub |             |
-|           |          |     |          |     |      |             |
-|         2 | 3 131    |     | 3 131    | 0.1 | boot | /mnt/sdd2   |
-|           |          |     |          |     |      |             |
-|           |          |     |          |     |      |             |
-|-----------+----------+-----+----------+-----+------+-------------|
-|         3 |          |     | 131 3000 | 2.8 | fs1  | /mnt/sdd3   |
-|           |          |     |          |     |      |             |
-|           |          |     | 131 2000 |     |      |             |
-|           |          |     |          |     |      |             |
-|           | 131 7000 |     | 131 6000 | 5.7 |      |             |
-|           |          |     |          |     |      |             |
-|           |          |     |          |     |      |             |
-|-----------+----------+-----+----------+-----+------+-------------|
-|         4 |          |     | 3000 -1  | 4.5 | fs2  | /mnt/sdd4   |
-|           |          |     |          |     |      |             |
-|           | 7000 -1  |     | 6000 -1  | 9.3 |      |             |
-|           |          |     |          |     |      |             |
-|           |          |     | 2000 -1  |     |      |             |
+| partition | b1 sda 279G   | a M      | a G | y mib    | y G | name | mount point |
+|-----------+---------------+----------+-----+----------+-----+------+-------------|
+|         1 | 1 3           | 1 3      |     | 1 3      |     | grub |             |
+|           |               |          |     |          |     |      |             |
+|         2 | 3 131         | 3 131    |     | 3 131    | 0.1 | boot | /mnt/sdd2   |
+|           |               |          |     |          |     |      |             |
+|           |               |          |     |          |     |      |             |
+|-----------+---------------+----------+-----+----------+-----+------+-------------|
+|         3 | 131 1000 swap |          |     | 131 3000 | 2.8 | fs1  | /mnt/sdd3   |
+|           |               |          |     |          |     |      |             |
+|           |               |          |     | 131 2000 |     |      |             |
+|           |               |          |     |          |     |      |             |
+|           |               | 131 7000 |     | 131 6000 | 5.7 |      |             |
+|           |               |          |     |          |     |      |             |
+|           |               |          |     |          |     |      |             |
+|-----------+---------------+----------+-----+----------+-----+------+-------------|
+|         4 |               |          |     | 3000 -1  | 4.5 | fs2  | /mnt/sdd4   |
+|           |               |          |     |          |     |      |             |
+|           |               | 7000 -1  |     | 6000 -1  | 9.3 |      |             |
+|           |               |          |     |          |     |      |             |
+|           |               |          |     | 2000 -1  |     |      |             |
 
 
 parted -a optimal /dev/sdc
 
 parted -a optimal /dev/sdd
+
+parted -a optimal /dev/sda
+
+
 
 
 (parted)
@@ -9605,15 +9665,61 @@ mkpart primary 3 131
 name 2 boot
 
 
+# b1 sda 279g
+
+mkpart primary 131 1000    
+
+name 3 swap
+
 # yusb 8g
 mkpart primary 131 2000    
-
-mkpart primary 131 3000    
 
 # 16g
 mkpart primary 131 6000    
 
 name 3 fs1
+
+
+# b1 sda 279g
+
+mkpart primary 1000 10000    
+
+name 4 fs1
+
+
+mkpart primary 10000 20000    
+
+name 5 fs2
+
+mkpart primary 20000 -1
+
+name 6 fs3
+
+
+#  warning: Attempting to install GRUB to a disk with multiple partition labels.  This is not supported yet..
+
+https://askubuntu.com/questions/666527/install-grub-claims-that-i-have-multiple-partiton-labels-and-that-embedding-is
+
+
+mkpart primary 0 1
+
+Assuming problem device is /dev/sda:
+
+Create a new partition in the initial 1 MiB
+
+$ parted /dev/sda
+$ mkpart primary ext4 0MiB 1MiB
+$ quit
+Then, zero the newly created partition
+
+$ dd if=/dev/zero of=/dev/sda2
+Then, delete the partition
+
+$ parted /dev/sda
+$ rm 2
+$ quit
+
+
 
 
 # yusb 8g
@@ -9626,6 +9732,9 @@ mkpart primary 6000 -1
 
 name 4 fs2
 
+set 2 boot on
+
+
 quit
 
 
@@ -9636,6 +9745,16 @@ mkfs.ext4 -j -T small /dev/sdd3
 
 mkfs.ext4 -j -T small /dev/sdd4
 
+
+
+
+mkfs.ext2 -T small /dev/sda2
+
+mkfs.ext4 -j /dev/sda4
+
+mkfs.ext4 -j /dev/sda5
+
+mkfs.ext4 -j /dev/sda6
 
 
 

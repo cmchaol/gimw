@@ -597,6 +597,8 @@ EXTENSION=20170921
 
 EXTENSION=20170913
 
+EXTENSION=20171108
+
 cp .config /boot/config-${KERNELVER}-${EXTENSION}
 cp System.map /boot/System.map-${KERNELVER}-${EXTENSION}
 cp arch/x86_64/boot/bzImage /boot/kernel-${KERNELVER}-${EXTENSION}
@@ -1106,6 +1108,354 @@ mkfs.ext4 -j -T small /dev/sdc5
 
   
 ** kernel and package build
+
+
+*** ker448-20171108 
+
+| kernel configuration            |                                                                |
+|                                 | [2017-08-22 Tue 10:26]                                         |
+| sys-kernel/hardened-sources     | 4.7.10                                                         |
+|---------------------------------+----------------------------------------------------------------|
+| Smallest Kernel                 | ker4710-smallest-20170822                                      |
+|                                 |                                                                |
+| cpu tmpfs futex                 | v                                                              |
+| eventpoll MULTIUSER             |                                                                |
+|                                 |                                                                |
+| usb disk fs                     | v                                                              |
+|                                 |                                                                |
+| netcards                        | v                                                              |
+|---------------------------------+----------------------------------------------------------------|
+| udev                            | ker4710-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-20170822                 |
+|                                 |                                                                |
+| USE="udev"                      |                                                                |
+|                                 |                                                                |
+| emerge                          |                                                                |
+|                                 |                                                                |
+| rc-update add udev sysinit      |                                                                |
+|                                 |                                                                |
+|---------------------------------+----------------------------------------------------------------|
+| xorg driver                     |                                                                |
+|                                 |                                                                |
+| add Event interface             |                                                                |
+|                                 |                                                                |
+|                                 |                                                                |
+| <*> Framebuffer Console support | ker4710-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-20170822               |
+|                                 |                                                                |
+| INPUT_DEVICES="libinput"        |                                                                |
+|                                 |                                                                |
+| emerge weston                   |                                                                |
+|                                 |                                                                |
+|---------------------------------+----------------------------------------------------------------|
+| emerge grub                     |                                                                |
+|                                 |                                                                |
+|---------------------------------+----------------------------------------------------------------|
+|                                 |                                                                |
+| emerge autossh keychain         |                                                                |
+|                                 |                                                                |
+| dhcpcd                          |                                                                |
+|                                 |                                                                |
+| chrome                          |                                                                |
+| browser                         |                                                                |
+|                                 |                                                                |
+| General setup                   |                                                                |
+| Namespaces support              |                                                                |
+| User namespace                  | ker4710-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-20170822            |
+|                                 |                                                                |
+| emerge google-chrome            |                                                                |
+|                                 |                                                                |
+| emerge emacs                    |                                                                |
+|---------------------------------+----------------------------------------------------------------|
+|                                 | [2017-08-28 Mon 17:37]                                         |
+| docker                          | ker448-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-do-20170828          |
+|                                 |                                                                |
+|                                 | [2017-09-12 Tue 09:31]                                         |
+|                                 | ker448-20170912                                                |
+|                                 |                                                                |
+|                                 | [2017-09-12 Tue 10:40]                                         |
+|                                 | ker448-20170912-2                                              |
+|---------------------------------+----------------------------------------------------------------|
+|                                 | [2017-08-29 Tue 12:11]                                         |
+| qemu                            | ker448-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-do-qe-20170829       |
+|---------------------------------+----------------------------------------------------------------|
+|                                 | [2017-08-29 Tue 14:45]                                         |
+| fs, btrfs, dos, ntfs            | ker448-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-do-qe-ms-20170829    |
+|---------------------------------+----------------------------------------------------------------|
+| chrome                          | [2017-08-30 Wed 14:54]                                         |
+|                                 | ker448-sm-cp-tm-fu-ev-mu-us-fs-ne-ud-x-go-do-qe-ms-ch-20170830 |
+|---------------------------------+----------------------------------------------------------------|
+|                                 | [2017-09-01 Fri 08:56]                                         |
+| overlayfs                       |                                                                |
+| cifs                            |                                                                |
+| fuse                            |                                                                |
+|                                 | ker448-20170901                                                |
+|---------------------------------+----------------------------------------------------------------|
+|                                 | [2017-09-04 Mon 16:45]                                         |
+| loop, for squashfs              |                                                                |
+|---------------------------------+----------------------------------------------------------------|
+| iptable                         |                                                                |
+|                                 | [2017-09-21 Thu 11:41]                                         |
+|                                 | ker448-20170921                                                |
+|---------------------------------+----------------------------------------------------------------|
+| hwclock                         |                                                                |
+|                                 |                                                                |
+| audio                           |                                                                |
+
+**** System time
+
+https://wiki.gentoo.org/wiki/System_time
+
+
+
+Hardware clock
+To have a hardware clock, the following kernel options must be activated:
+
+KERNEL Necessary kernel options for a hardware clock
+
+
+    Device Drivers --->
+      [*] Real Time Clock --->
+            [ ]   Set system time from RTC on startup and resume
+            [ ]   Set the RTC time based on NTP synchronization
+            [*]   /sys/class/rtc/rtcN (sysfs)
+            [*]   /proc/driver/rtc (procfs for rtc0)
+            [*]   /dev/rtcN (character devices)
+            <*>   PC-style 'CMOS'
+
+On a sufficiently modern kernel (3.9 or newer), Linux can be configured to handle setting the system time automatically. To do so, enable the Set system time from RTC on startup and resume (CONFIG_RTC_HCTOSYS) and Set the RTC time based on NTP synchronization (CONFIG_RTC_SYSTOHC) kernel options:
+
+KERNEL Letting the kernel sync the system clock
+    Device Drivers --->
+      [*] Real Time Clock --->
+            [*]   Set system time from RTC on startup and resume
+            (rtc0)  RTC used to set the system time
+            [*]   Set the RTC time based on NTP synchronization
+            (rtc0)  RTC used to synchronize NTP adjustment
+            [*]   /sys/class/rtc/rtcN (sysfs)
+            [*]   /proc/driver/rtc (procfs for rtc0)
+            [*]   /dev/rtcN (character devices)
+            <*>   PC-style 'CMOS'
+
+
+
+**** iptable
+
+
+https://wiki.gentoo.org/wiki/Iptables#Kernel
+
+
+
+/var/log/portage/elog/summary.log
+
+  SECCOMP_FILTER is required for sandbox to work
+  CONFIG_ADVISE_SYSCALLS is required for the renderer (bug #552576)
+
+  │ Symbol: SECCOMP_FILTER [=n]      
+  │   Defined at arch/Kconfig:349    
+  │   Depends on: HAVE_ARCH_SECCOMP_FILTER [=y] && SECCOMP [=n] && NET [=y]
+ 
+ Symbol: ADVISE_SYSCALLS [=y]
+  │ Prompt: Enable madvise/fadvise syscalls 
+  │   Location: 
+  │     -> General setup
+
+
+d="/tmp/dockertest"
+
+mkdir $d
+
+
+docker run -v $d:/tmp -it  c5766/giid:v71
+
+
+
+
+cat /etc/portage/make.conf | grep PORTAGE_TMPDIR
+
+sed -i 's/^PORTAGE_TMPDIR/# PORTAGE_TMPDIR/g' /etc/portage/make.conf # for dply
+
+sed -i 's/# PORTAGE_TMPDIR/PORTAGE_TMPDIR/g' /etc/portage/make.conf # for dply
+
+cat /etc/portage/make.conf | grep PORTAGE_TMPDIR
+
+
+**** kernel configuration
+
+cd /usr/src/linux
+
+
+
+make KCONFIG_ALLCONFIG=/tmp/defconfig alldefconfig
+
+make menuconfig
+
+make allnoconfig  
+
+
+
+f="/tmp/ker448-20171108"
+
+
+
+cp .config $f.config
+
+
+make savedefconfig 
+
+cp defconfig $f.defconfig
+
+ls -l /tmp
+
+
+time nice -10 \
+make -j 6 && make modules_install
+
+ker448-20171108  on b1 sda
+
+
+real    0m39.639s
+user    0m41.844s
+sys     0m3.984s
+
+
+ker448-20170921  on b1 sda
+
+real    1m35.484s
+user    4m30.980s
+sys     0m15.532s
+
+
+ker448-20170904"  on a usb
+
+make loop y
+real    0m41.504s
+user    0m24.707s
+sys     0m4.660s
+
+make loop m
+real    1m51.007s
+user    0m24.792s
+sys     0m4.679s
+
+
+
+
+ker448-20170901"
+real    11m36.797s
+user    14m36.522s
+sys     1m5.874s
+
+
+
+
+cp $f .config 
+
+make KCONFIG_ALLCONFIG=$f alldefconfig
+
+
+make menuconfig
+
+
+proxychains -f /root/proxychains.conf \
+emerge =sys-kernel/hardened-sources-4.4.8-r1
+
+# 
+tail -f /tmp/wd/var/log/emerge-fetch.log
+
+
+
+proxychains -f /root/proxychains.conf \
+emerge -pv google-chrome 
+
+
+
+proxychains -f /root/proxychains.conf \
+emerge -pv dev-vcs/git
+
+https://wayland.freedesktop.org/xserver.html
+
+
+
+ Symbol: BLK_DEV_LOOP [=n] 
+  │ Prompt: Loopback device support 
+  │   Location:                     
+  │     -> Device Drivers           
+  │ (2)   -> Block devices (BLK_DEV [=y]) 
+  │   Defined at drivers/block/Kconfig:211
+  │   Depends on: BLK_DEV [=y] 
+
+Symbol: CFQ_GROUP_IOSCHED [=n]                                                                   │  
+  │ Type  : boolean                                                                                  │  
+  │ Prompt: CFQ Group Scheduling support                                                             │  
+  │   Location:                                                                                      │  
+  │     -> Enable the block layer (BLOCK [=y])                                                       │  
+  │       -> IO Schedulers                                                                           │  
+  │ (1)     -> CFQ I/O scheduler (IOSCHED_CFQ [=y])                                                  │  
+  │   Defined at block/Kconfig.iosched:35                                                            │  
+  │   Depends on: BLOCK [=y] && IOSCHED_CFQ [=y] && BLK_CGROUP [=y]                                  │  
+  │ 
+
+ Symbol: XFRM_ALGO [=n]                                                                           │  
+  │ Type  : tristate                                                                                 │  
+  │   Defined at net/xfrm/Kconfig:8                                                                  │  
+  │   Depends on: NET [=y]                                                                           │  
+  │   Selects: XFRM [=y] && CRYPTO [=y]                                                              │  
+  │   Selected by: XFRM_USER [=n] && NET [=y] && INET [=y] || XFRM_IPCOMP [=n] && NET [=y] || NET_KE │  
+  │  
+
+ Symbol: XFRM_USER [=m]                                                                           │  
+  │ Type  : tristate                                                                                 │  
+  │ Prompt: Transformation user configuration interface                                              │  
+  │   Location:                                                                                      │  
+  │     -> Networking support (NET [=y])                                                             │  
+  │ (1)   -> Networking options                                                                      │  
+  │   Defined at net/xfrm/Kconfig:13                                                                 │  
+  │   Depends on: NET [=y] && INET [=y]                                                              │  
+  │   Selects: XFRM_ALGO [=m]                                                                        │  
+  │   
+
+ Symbol: XFRM_ALGO [=n]                                                                           │  
+  │ Type  : tristate                                                                                 │  
+  │   Defined at net/xfrm/Kconfig:8                                                                  │  
+  │   Depends on: NET [=y]                                                                           │  
+  │   Selects: XFRM [=y] && CRYPTO [=y]                                                              │  
+  │   Selected by: XFRM_USER [=n] && NET [=y] && INET [=y] || XFRM_IPCOMP [=n] && NET [=y] || NET_KE │  
+  │  
+
+ Symbol: MACVLAN [=n]                                                                             │  
+  │ Type  : tristate                                                                                 │  
+  │ Prompt: MAC-VLAN support                                                                         │  
+  │   Location:                                                                                      │  
+  │     -> Device Drivers                                                                            │  
+  │       -> Network device support (NETDEVICES [=y])                                                │  
+  │ (1)     -> Network core driver support (NET_CORE [=y])                                           │  
+  │   Defined at drivers/net/Kconfig:121                                                             │  
+  │   Depends on: NETDEVICES [=y] && NET_CORE [=y]                                                   │  
+  │  
+Symbol: MEMCG_KMEM [=n]                                                                          │  
+  │ Type  : boolean                                                                                  │  
+  │ Prompt: Memory Resource Controller Kernel Memory accounting                                      │  
+  │   Location:                                                                                      │  
+  │     -> General setup                                                                             │  
+  │       -> Control Group support (CGROUPS [=y])                                                    │  
+  │ (1)     -> Memory Resource Controller for Control Groups (MEMCG [=y])                            │  
+  │   Defined at init/Kconfig:1045                                                                   │  
+  │   Depends on: CGROUPS [=y] && MEMCG [=y] && (SLUB [=y] || SLAB [=n])                             │  
+  │ 
+
+Symbol: EXT4_FS_POSIX_ACL [=n]                                                                   │  
+  │ Type  : boolean                                                                                  │  
+  │ Prompt: Ext4 POSIX Access Control Lists                                                          │  
+  │   Location:                                                                                      │  
+  │     -> File systems                                                                              │  
+  │ (1)   -> The Extended 4 (ext4) filesystem (EXT4_FS [=y])                                         │  
+  │   Defined at fs/ext4/Kconfig:76                                                                  │  
+  │   Depends on: BLOCK [=y] && EXT4_FS [=y]                                                         │  
+  │   Selects: FS_POSIX_ACL [=y]                                                                     │  
+  │   Selected by: EXT3_FS_POSIX_ACL [=n] && BLOCK [=y] && EXT3_FS [=n]                              │  
+  │ 
+
+
+
 
 
 *** ker448-20170921 
